@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 
@@ -63,49 +64,56 @@ export default async function SantriPage({
                 </form>
             </div>
 
-            <div className="rounded-md border bg-white">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>NIS</TableHead>
-                            <TableHead>Nama</TableHead>
-                            <TableHead>Kelas</TableHead>
-                            <TableHead>Asrama</TableHead>
-                            <TableHead>Jenis Kelamin</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Aksi</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {santri?.length ? (
-                            santri.map((s) => (
-                                <TableRow key={s.id}>
-                                    <TableCell>{s.nis}</TableCell>
-                                    <TableCell className="font-medium">{s.name}</TableCell>
-                                    <TableCell>{s.class}</TableCell>
-                                    <TableCell>{s.dorm || '-'}</TableCell>
-                                    <TableCell>
-                                        {s.gender === 'L' ? 'Laki-laki' : s.gender === 'P' ? 'Perempuan' : s.gender}
-                                    </TableCell>
-                                    <TableCell>
-                                        <span className="capitalize">
-                                            {s.status === 'active' ? 'Aktif' : s.status === 'inactive' ? 'Tidak Aktif' : s.status}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <SantriActions santri={s} />
+            <div className="rounded-md border bg-white overflow-hidden">
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="hidden md:table-cell">NIS</TableHead>
+                                <TableHead className="font-bold">Nama</TableHead>
+                                <TableHead>Kelas</TableHead>
+                                <TableHead className="hidden lg:table-cell">Asrama</TableHead>
+                                <TableHead className="hidden sm:table-cell">Jenis Kelamin</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Aksi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {santri?.length ? (
+                                santri.map((s) => (
+                                    <TableRow key={s.id}>
+                                        <TableCell className="hidden md:table-cell font-mono text-xs">{s.nis}</TableCell>
+                                        <TableCell className="font-medium whitespace-nowrap">
+                                            <div className="flex flex-col">
+                                                <span>{s.name}</span>
+                                                <span className="text-[10px] text-muted-foreground md:hidden">NIS: {s.nis}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{s.class}</TableCell>
+                                        <TableCell className="hidden lg:table-cell">{s.dorm || '-'}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">
+                                            {s.gender === 'L' ? 'Laki-laki' : s.gender === 'P' ? 'Perempuan' : s.gender}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={s.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                                                {s.status === 'active' ? 'Aktif' : s.status === 'inactive' ? 'Tidak Aktif' : s.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <SantriActions santri={s} />
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="h-24 text-center">
+                                        Santri tidak ditemukan.
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center">
-                                    Santri tidak ditemukan.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
 
             {/* Pagination */}

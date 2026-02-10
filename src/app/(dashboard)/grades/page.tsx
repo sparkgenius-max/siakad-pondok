@@ -28,7 +28,6 @@ const SEMESTERS = [
     { value: 'Genap', label: 'Genap (Semester 2)' },
 ]
 
-// Contoh mata pelajaran pondok pesantren
 const SUBJECTS = [
     'Al-Quran', 'Tajwid', 'Tafsir', 'Hadits', 'Fiqih', 'Ushul Fiqih',
     'Aqidah', 'Akhlaq', 'Nahwu', 'Shorof', 'Balaghah', 'Muthalaah',
@@ -54,21 +53,18 @@ export default async function GradesPage({
     const selectedSemester = params.semester || 'Ganjil'
     const selectedClass = params.class || ''
 
-    // Fetch santri list for dialog
     const { data: santriList } = await supabase
         .from('santri')
         .select('id, name, nis')
         .eq('status', 'active')
         .order('name')
 
-    // Get unique classes
     const { data: classesData } = await supabase
         .from('santri')
         .select('class')
         .eq('status', 'active')
     const uniqueClasses = [...new Set(classesData?.map(s => s.class).filter(Boolean))].sort()
 
-    // Build query for all grades
     let query = supabase
         .from('grades')
         .select('*, santri(id, name, nis, class)', { count: 'exact' })
@@ -82,7 +78,6 @@ export default async function GradesPage({
     const { data: grades, count } = await query
     const totalPages = count ? Math.ceil(count / limit) : 0
 
-    // Data for per-class input
     let classSantri: any[] = []
     let classGrades: any[] = []
     if (selectedClass) {
@@ -106,16 +101,10 @@ export default async function GradesPage({
         }
     }
 
-    // Stats
     const { count: totalGrades } = await supabase
         .from('grades')
         .select('*', { count: 'exact', head: true })
 
-    const { count: totalSubjects } = await supabase
-        .from('grades')
-        .select('subject', { count: 'exact', head: true })
-
-    // Build URL helper
     const buildUrl = (newParams: Record<string, string | number>) => {
         const urlParams = new URLSearchParams()
         const merged = { ...params, ...newParams }
@@ -125,7 +114,6 @@ export default async function GradesPage({
         return `/grades?${urlParams.toString()}`
     }
 
-    // Get grade color
     const getGradeColor = (grade: string) => {
         const numGrade = parseInt(grade)
         if (!isNaN(numGrade)) {
@@ -134,10 +122,7 @@ export default async function GradesPage({
             if (numGrade >= 55) return 'text-yellow-600 bg-yellow-50'
             return 'text-red-600 bg-red-50'
         }
-        if (['A', 'A+', 'A-'].includes(grade.toUpperCase())) return 'text-green-600 bg-green-50'
-        if (['B', 'B+', 'B-'].includes(grade.toUpperCase())) return 'text-blue-600 bg-blue-50'
-        if (['C', 'C+', 'C-'].includes(grade.toUpperCase())) return 'text-yellow-600 bg-yellow-50'
-        return 'text-red-600 bg-red-50'
+        return 'text-gray-600 bg-gray-50'
     }
 
     return (
@@ -147,52 +132,47 @@ export default async function GradesPage({
                 <GradeDialog santriList={santriList || []} />
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Nilai</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-xs md:text-sm font-medium">Total Nilai</CardTitle>
                         <GraduationCap className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{totalGrades || 0}</div>
-                        <p className="text-xs text-muted-foreground">data nilai tercatat</p>
+                        <div className="text-xl md:text-2xl font-bold">{totalGrades || 0}</div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Santri Aktif</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-xs md:text-sm font-medium">Santri</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{santriList?.length || 0}</div>
-                        <p className="text-xs text-muted-foreground">santri terdaftar</p>
+                        <div className="text-xl md:text-2xl font-bold">{santriList?.length || 0}</div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Kelas</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-xs md:text-sm font-medium">Kelas</CardTitle>
                         <BookOpen className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{uniqueClasses.length}</div>
-                        <p className="text-xs text-muted-foreground">kelas aktif</p>
+                        <div className="text-xl md:text-2xl font-bold">{uniqueClasses.length}</div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Mata Pelajaran</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-xs md:text-sm font-medium">Mapel</CardTitle>
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{SUBJECTS.length}</div>
-                        <p className="text-xs text-muted-foreground">mapel tersedia</p>
+                        <div className="text-xl md:text-2xl font-bold">{SUBJECTS.length}</div>
                     </CardContent>
                 </Card>
             </div>
 
             <Tabs defaultValue={activeTab} className="space-y-4">
-                <TabsList>
+                <TabsList className="grid grid-cols-2 w-full md:w-auto">
                     <TabsTrigger value="all" asChild>
                         <Link href={buildUrl({ tab: 'all', page: 1 })}>Semua Nilai</Link>
                     </TabsTrigger>
@@ -201,18 +181,17 @@ export default async function GradesPage({
                     </TabsTrigger>
                 </TabsList>
 
-                {/* SEMUA NILAI TAB */}
                 <TabsContent value="all" className="space-y-4">
-                    <div className="flex items-center gap-4">
-                        <form className="flex items-center space-x-2">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                        <form className="flex items-center space-x-2 w-full md:w-auto">
                             <input type="hidden" name="tab" value="all" />
-                            <div className="relative">
+                            <div className="relative flex-1 md:w-[300px]">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     name="q"
                                     type="search"
                                     placeholder="Cari mata pelajaran..."
-                                    className="pl-8 w-[250px]"
+                                    className="pl-8"
                                     defaultValue={params.q}
                                 />
                             </div>
@@ -220,62 +199,61 @@ export default async function GradesPage({
                         </form>
                     </div>
 
-                    <Card>
+                    <Card className="overflow-hidden">
                         <CardContent className="p-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Santri</TableHead>
-                                        <TableHead>Kelas</TableHead>
-                                        <TableHead>Tahun Ajaran</TableHead>
-                                        <TableHead>Semester</TableHead>
-                                        <TableHead>Mata Pelajaran</TableHead>
-                                        <TableHead className="text-center">Nilai</TableHead>
-                                        <TableHead className="text-right">Aksi</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {grades?.length ? (
-                                        grades.map((g: any) => (
-                                            <TableRow key={g.id}>
-                                                <TableCell>
-                                                    <Link href={`/grades/santri/${g.santri?.id}`} className="hover:underline">
-                                                        <div className="font-medium">{g.santri?.name}</div>
-                                                        <div className="text-xs text-muted-foreground">{g.santri?.nis}</div>
-                                                    </Link>
-                                                </TableCell>
-                                                <TableCell>{g.santri?.class}</TableCell>
-                                                <TableCell>{g.academic_year}</TableCell>
-                                                <TableCell>{g.semester}</TableCell>
-                                                <TableCell>{g.subject}</TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge className={`${getGradeColor(g.grade)} font-bold`}>
-                                                        {g.grade}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <GradeDialog santriList={santriList || []} grade={g} />
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Santri</TableHead>
+                                            <TableHead className="hidden sm:table-cell">Kelas</TableHead>
+                                            <TableHead>Mapel</TableHead>
+                                            <TableHead className="text-right">Nilai</TableHead>
+                                            <TableHead className="hidden md:table-cell">Jenis</TableHead>
+                                            <TableHead className="text-right">Aksi</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {grades?.length ? (
+                                            grades.map((g: any) => (
+                                                <TableRow key={g.id}>
+                                                    <TableCell>
+                                                        <div className="font-medium whitespace-nowrap">{g.santri?.name}</div>
+                                                        <div className="text-[10px] text-muted-foreground sm:hidden">Kelas {g.santri?.class}</div>
+                                                    </TableCell>
+                                                    <TableCell className="hidden sm:table-cell">Kelas {g.santri?.class}</TableCell>
+                                                    <TableCell className="whitespace-nowrap font-medium">{g.subject}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Badge className={getGradeColor(String(g.grade))}>
+                                                            {g.grade}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="hidden md:table-cell">
+                                                        <Badge variant="outline">{g.type}</Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <GradeDialog santriList={santriList || []} grade={g} />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={6} className="h-24 text-center">
+                                                    Tidak ada data nilai.
                                                 </TableCell>
                                             </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center">
-                                                Belum ada data nilai.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
 
-                    {/* Pagination */}
-                    <div className="flex items-center justify-between">
-                        <div className="text-sm text-muted-foreground">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between py-4">
+                        <div className="text-sm text-muted-foreground text-center md:text-left">
                             Menampilkan {grades?.length || 0} dari {count || 0} data
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center justify-center space-x-2">
                             <Button variant="outline" size="sm" disabled={page <= 1} asChild={page > 1}>
                                 {page > 1 ? (
                                     <Link href={buildUrl({ page: page - 1 })} className="flex items-center">
@@ -307,29 +285,27 @@ export default async function GradesPage({
                     </div>
                 </TabsContent>
 
-                {/* INPUT PER KELAS TAB */}
                 <TabsContent value="class" className="space-y-4">
                     <Card>
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-lg">Pilih Kelas dan Periode</CardTitle>
-                            <CardDescription>Pilih kelas untuk melihat dan input nilai santri</CardDescription>
+                            <CardTitle className="text-lg">Filter Kelas</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form className="flex items-center gap-4 flex-wrap">
+                            <form className="flex items-center gap-3 flex-wrap">
                                 <input type="hidden" name="tab" value="class" />
                                 <Select name="class" defaultValue={selectedClass}>
-                                    <SelectTrigger className="w-[150px]">
-                                        <SelectValue placeholder="Pilih Kelas" />
+                                    <SelectTrigger className="w-[140px]">
+                                        <SelectValue placeholder="Kelas" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {uniqueClasses.map(cls => (
-                                            <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+                                            <SelectItem key={cls} value={cls}>Kelas {cls}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                                 <Select name="year" defaultValue={selectedYear}>
-                                    <SelectTrigger className="w-[150px]">
-                                        <SelectValue placeholder="Tahun Ajaran" />
+                                    <SelectTrigger className="w-[140px]">
+                                        <SelectValue placeholder="Tahun" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {[`${currentYear}/${currentYear + 1}`, `${currentYear - 1}/${currentYear}`].map(y => (
@@ -338,7 +314,7 @@ export default async function GradesPage({
                                     </SelectContent>
                                 </Select>
                                 <Select name="semester" defaultValue={selectedSemester}>
-                                    <SelectTrigger className="w-[180px]">
+                                    <SelectTrigger className="w-[140px]">
                                         <SelectValue placeholder="Semester" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -347,31 +323,26 @@ export default async function GradesPage({
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <Button type="submit">Tampilkan</Button>
+                                <Button type="submit">Filter</Button>
                             </form>
                         </CardContent>
                     </Card>
 
-                    {selectedClass && classSantri.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Kelas {selectedClass} - {selectedSemester} {selectedYear}</CardTitle>
-                                <CardDescription>{classSantri.length} santri terdaftar</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-0">
+                    {selectedClass && (
+                        <Card className="overflow-hidden">
+                            <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead className="w-[50px]">No</TableHead>
-                                            <TableHead>NIS</TableHead>
                                             <TableHead>Nama Santri</TableHead>
-                                            <TableHead className="text-center">Jumlah Nilai</TableHead>
+                                            <TableHead className="text-center">Mapel</TableHead>
                                             <TableHead className="text-center">Rata-rata</TableHead>
                                             <TableHead className="text-right">Aksi</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {classSantri.map((santri: any, index: number) => {
+                                        {classSantri.map((santri, index) => {
                                             const santriGrades = classGrades.filter(g => g.santri_id === santri.id)
                                             const gradeCount = santriGrades.length
                                             const avgGrade = gradeCount > 0
@@ -381,12 +352,12 @@ export default async function GradesPage({
                                             return (
                                                 <TableRow key={santri.id}>
                                                     <TableCell>{index + 1}</TableCell>
-                                                    <TableCell className="font-mono">{santri.nis}</TableCell>
-                                                    <TableCell className="font-medium">{santri.name}</TableCell>
+                                                    <TableCell>
+                                                        <div className="font-medium whitespace-nowrap">{santri.name}</div>
+                                                        <div className="text-[10px] text-muted-foreground">{santri.nis}</div>
+                                                    </TableCell>
                                                     <TableCell className="text-center">
-                                                        <Badge variant={gradeCount > 0 ? 'default' : 'secondary'}>
-                                                            {gradeCount} mapel
-                                                        </Badge>
+                                                        <Badge variant="secondary">{gradeCount}</Badge>
                                                     </TableCell>
                                                     <TableCell className="text-center">
                                                         {avgGrade !== null ? (
@@ -394,43 +365,20 @@ export default async function GradesPage({
                                                                 {avgGrade}
                                                             </Badge>
                                                         ) : (
-                                                            <span className="text-muted-foreground">-</span>
+                                                            <span className="text-muted-foreground text-xs">-</span>
                                                         )}
                                                     </TableCell>
-                                                    <TableCell className="text-right space-x-2">
-                                                        <Button variant="outline" size="sm" asChild>
-                                                            <Link href={`/grades/santri/${santri.id}`}>
-                                                                Lihat Nilai
-                                                            </Link>
+                                                    <TableCell className="text-right">
+                                                        <Button variant="ghost" size="sm" asChild>
+                                                            <Link href={`/grades/santri/${santri.id}`}>Detail</Link>
                                                         </Button>
-                                                        <GradeDialog santriList={[santri]} />
                                                     </TableCell>
                                                 </TableRow>
                                             )
                                         })}
                                     </TableBody>
                                 </Table>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {selectedClass && classSantri.length === 0 && (
-                        <Card>
-                            <CardContent className="py-12 text-center">
-                                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-medium">Tidak Ada Santri</h3>
-                                <p className="text-muted-foreground">Tidak ada santri aktif di kelas {selectedClass}</p>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {!selectedClass && (
-                        <Card>
-                            <CardContent className="py-12 text-center">
-                                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-medium">Pilih Kelas</h3>
-                                <p className="text-muted-foreground">Silakan pilih kelas untuk melihat daftar santri</p>
-                            </CardContent>
+                            </div>
                         </Card>
                     )}
                 </TabsContent>

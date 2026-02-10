@@ -134,55 +134,59 @@ export default async function PaymentsPage({
                     </div>
 
                     <Card>
-                        <CardContent className="p-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Tanggal</TableHead>
-                                        <TableHead>Santri</TableHead>
-                                        <TableHead>Periode</TableHead>
-                                        <TableHead className="text-right">Jumlah</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Catatan</TableHead>
-                                        <TableHead className="text-right">Aksi</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {payments.length ? (
-                                        payments.map((p: any) => (
-                                            <TableRow key={p.id}>
-                                                <TableCell className="font-medium">{new Date(p.payment_date).toLocaleDateString('id-ID')}</TableCell>
-                                                <TableCell>
-                                                    <Link href={`/payments/santri/${p.santri?.id}`} className="hover:underline">
-                                                        <div className="font-medium">{p.santri?.name}</div>
-                                                        <div className="text-xs text-muted-foreground">{p.santri?.nis}</div>
-                                                    </Link>
-                                                </TableCell>
-                                                <TableCell>{MONTHS[p.month - 1]?.label} {p.year}</TableCell>
-                                                <TableCell className="text-right font-semibold">Rp {p.amount?.toLocaleString('id-ID')}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={p.status === 'paid' ? 'default' : p.status === 'partial' ? 'secondary' : 'destructive'}
-                                                        className={p.status === 'paid' ? 'bg-green-100 text-green-700' : p.status === 'partial' ? 'bg-yellow-100 text-yellow-700' : ''}>
-                                                        {p.status === 'paid' ? 'Lunas' : p.status === 'partial' ? 'Sebagian' : 'Belum'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="max-w-[150px] truncate">{p.notes || '-'}</TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button variant="ghost" size="sm" asChild>
-                                                        <Link href={`/payments/santri/${p.santri?.id}`}>Riwayat</Link>
-                                                    </Button>
+                        <CardContent className="p-0 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="whitespace-nowrap">Tanggal</TableHead>
+                                            <TableHead>Santri</TableHead>
+                                            <TableHead className="hidden md:table-cell">Periode</TableHead>
+                                            <TableHead className="text-right">Jumlah</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="hidden lg:table-cell">Catatan</TableHead>
+                                            <TableHead className="text-right">Aksi</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {payments.length ? (
+                                            payments.map((p: any) => (
+                                                <TableRow key={p.id}>
+                                                    <TableCell className="font-medium whitespace-nowrap">
+                                                        {new Date(p.payment_date).toLocaleDateString('id-ID')}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Link href={`/payments/santri/${p.santri?.id}`} className="hover:underline">
+                                                            <div className="font-medium whitespace-nowrap">{p.santri?.name}</div>
+                                                            <div className="text-[10px] text-muted-foreground md:hidden">{p.santri?.nis}</div>
+                                                        </Link>
+                                                    </TableCell>
+                                                    <TableCell className="hidden md:table-cell whitespace-nowrap">{MONTHS[p.month - 1]?.label} {p.year}</TableCell>
+                                                    <TableCell className="text-right font-semibold whitespace-nowrap">Rp {p.amount?.toLocaleString('id-ID')}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={p.status === 'paid' ? 'default' : p.status === 'partial' ? 'secondary' : 'destructive'}
+                                                            className={p.status === 'paid' ? 'bg-green-100 text-green-700' : p.status === 'partial' ? 'bg-yellow-100 text-yellow-700' : ''}>
+                                                            {p.status === 'paid' ? 'Lunas' : p.status === 'partial' ? 'Sebagian' : 'Belum'}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="hidden lg:table-cell max-w-[150px] truncate">{p.notes || '-'}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button variant="ghost" size="sm" asChild>
+                                                            <Link href={`/payments/santri/${p.santri?.id}`}>Riwayat</Link>
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="h-24 text-center">
+                                                    Belum ada data pembayaran.
                                                 </TableCell>
                                             </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center">
-                                                Belum ada data pembayaran.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
 

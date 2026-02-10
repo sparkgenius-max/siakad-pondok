@@ -120,94 +120,54 @@ export default async function PermissionsPage({
             </div>
 
             {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
                 <Card className={statusFilter === 'pending' ? 'ring-2 ring-yellow-500' : ''}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Menunggu Approval</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-xs md:text-sm font-medium">Menunggu</CardTitle>
                         <Clock className="h-4 w-4 text-yellow-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-yellow-600">{pendingCount || 0}</div>
-                        <Link href={buildUrl({ status: 'pending', page: 1 })} className="text-xs text-muted-foreground hover:underline">
-                            View pending →
-                        </Link>
+                        <div className="text-xl md:text-2xl font-bold text-yellow-600">{pendingCount || 0}</div>
                     </CardContent>
                 </Card>
                 <Card className={statusFilter === 'approved' ? 'ring-2 ring-green-500' : ''}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Disetujui</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-xs md:text-sm font-medium">Disetujui</CardTitle>
                         <CheckCircle className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-green-600">{approvedCount || 0}</div>
-                        <Link href={buildUrl({ status: 'approved', page: 1 })} className="text-xs text-muted-foreground hover:underline">
-                            View approved →
-                        </Link>
+                        <div className="text-xl md:text-2xl font-bold text-green-600">{approvedCount || 0}</div>
                     </CardContent>
                 </Card>
                 <Card className={statusFilter === 'rejected' ? 'ring-2 ring-red-500' : ''}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ditolak</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-xs md:text-sm font-medium">Ditolak</CardTitle>
                         <XCircle className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-red-600">{rejectedCount || 0}</div>
-                        <Link href={buildUrl({ status: 'rejected', page: 1 })} className="text-xs text-muted-foreground hover:underline">
-                            View rejected →
-                        </Link>
+                        <div className="text-xl md:text-2xl font-bold text-red-600">{rejectedCount || 0}</div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Sedang Izin Hari Ini</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-xs md:text-sm font-medium">Aktif Izin</CardTitle>
                         <Users className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-600">{activePermissions?.length || 0}</div>
-                        <p className="text-xs text-muted-foreground">santri tidak hadir</p>
+                        <div className="text-xl md:text-2xl font-bold text-blue-600">{activePermissions?.length || 0}</div>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Currently Active Permissions */}
-            {activePermissions && activePermissions.length > 0 && (
-                <Card className="border-blue-200 bg-blue-50/50">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-blue-600" />
-                            Santri Sedang Izin Hari Ini
-                        </CardTitle>
-                        <CardDescription>Daftar santri yang sedang dalam masa izin</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                            {activePermissions.map((p: any) => (
-                                <div key={p.id} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border">
-                                    <div>
-                                        <div className="font-medium text-sm">{p.santri?.name}</div>
-                                        <div className="text-xs text-muted-foreground">{p.santri?.class} • {TYPE_LABELS[p.type]?.label}</div>
-                                    </div>
-                                    <Badge variant="outline" className="ml-2">
-                                        {getDuration(p.start_date, p.end_date)} hari
-                                    </Badge>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
             {/* Filter Tabs */}
             <Tabs defaultValue={statusFilter} className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <TabsList>
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <TabsList className="grid grid-cols-4 w-full md:w-auto">
                         <TabsTrigger value="all" asChild>
                             <Link href={buildUrl({ status: '', page: 1 })}>Semua</Link>
                         </TabsTrigger>
                         <TabsTrigger value="pending" asChild>
-                            <Link href={buildUrl({ status: 'pending', page: 1 })}>
-                                Pending {pendingCount ? `(${pendingCount})` : ''}
-                            </Link>
+                            <Link href={buildUrl({ status: 'pending', page: 1 })}>Pending</Link>
                         </TabsTrigger>
                         <TabsTrigger value="approved" asChild>
                             <Link href={buildUrl({ status: 'approved', page: 1 })}>Approved</Link>
@@ -218,141 +178,125 @@ export default async function PermissionsPage({
                     </TabsList>
 
                     <form className="flex items-center space-x-2">
-                        <input type="hidden" name="status" value={statusFilter} />
-                        <div className="relative">
+                        <div className="relative w-full md:w-auto">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 name="q"
                                 type="search"
-                                placeholder="Search reason..."
-                                className="pl-8 w-[200px]"
+                                placeholder="Cari alasan..."
+                                className="pl-8 w-full md:w-[250px]"
                                 defaultValue={params.q}
                             />
                         </div>
-                        <Button type="submit" variant="secondary" size="sm">Search</Button>
+                        <Button type="submit" variant="secondary">Cari</Button>
                     </form>
                 </div>
 
-                {/* Permissions Table */}
-                <Card>
-                    <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[50px]">#</TableHead>
-                                    <TableHead>Tanggal</TableHead>
-                                    <TableHead>Santri</TableHead>
-                                    <TableHead>Jenis</TableHead>
-                                    <TableHead>Alasan</TableHead>
-                                    <TableHead>Durasi</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Aksi</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {permissions?.length ? (
-                                    permissions.map((p: any, index: number) => {
-                                        const typeConfig = TYPE_LABELS[p.type] || TYPE_LABELS.other
-                                        const statusConfig = STATUS_CONFIG[p.status] || STATUS_CONFIG.pending
-                                        const StatusIcon = statusConfig.icon
-                                        const duration = getDuration(p.start_date, p.end_date)
-
-                                        return (
-                                            <TableRow key={p.id} className={p.status === 'pending' ? 'bg-yellow-50/50' : ''}>
-                                                <TableCell className="text-muted-foreground">
-                                                    {from + index + 1}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium">{new Date(p.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
-                                                        {p.start_date !== p.end_date && (
-                                                            <span className="text-xs text-muted-foreground">
-                                                                s/d {new Date(p.end_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                                                            </span>
-                                                        )}
+                <TabsContent value={statusFilter} className="space-y-4">
+                    <Card className="overflow-hidden">
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Santri</TableHead>
+                                            <TableHead className="hidden sm:table-cell">Jenis</TableHead>
+                                            <TableHead className="hidden md:table-cell">Tanggal</TableHead>
+                                            <TableHead className="hidden lg:table-cell">Alasan</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="text-right">Aksi</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {permissions?.length ? (
+                                            permissions.map((p: any) => {
+                                                const typeConfig = TYPE_LABELS[p.type] || TYPE_LABELS.other
+                                                return (
+                                                    <TableRow key={p.id}>
+                                                        <TableCell>
+                                                            <div className="font-medium whitespace-nowrap">{p.santri?.name}</div>
+                                                            <div className="text-[10px] text-muted-foreground sm:hidden">
+                                                                {typeConfig.label}
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground md:hidden">
+                                                                {new Date(p.start_date).toLocaleDateString('id-ID')}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="hidden sm:table-cell font-medium">
+                                                            <Badge variant="outline" className={typeConfig.color}>
+                                                                {typeConfig.label}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="hidden md:table-cell whitespace-nowrap text-xs">
+                                                            {new Date(p.start_date).toLocaleDateString('id-ID')} - {new Date(p.end_date).toLocaleDateString('id-ID')}
+                                                        </TableCell>
+                                                        <TableCell className="hidden lg:table-cell max-w-[200px] truncate">
+                                                            {p.reason}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={p.status === 'approved' ? 'default' : p.status === 'pending' ? 'secondary' : 'destructive'}
+                                                                className={p.status === 'approved' ? 'bg-green-100 text-green-700 hover:bg-green-100' : p.status === 'pending' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100' : ''}>
+                                                                {p.status === 'approved' ? 'Disetujui' : p.status === 'pending' ? 'Menunggu' : 'Ditolak'}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            <PermissionActions id={p.id} status={p.status} />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )
+                                            })
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={6} className="h-24 text-center">
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                                                        <p>Tidak ada data perizinan</p>
                                                     </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Link href={`/permissions/santri/${p.santri?.id}`} className="hover:underline">
-                                                        <div className="font-medium">{p.santri?.name}</div>
-                                                        <div className="text-xs text-muted-foreground">{p.santri?.class} • {p.santri?.nis}</div>
-                                                    </Link>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge className={typeConfig.color} variant="secondary">
-                                                        {typeConfig.label}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="max-w-[200px]">
-                                                    <p className="truncate" title={p.reason}>{p.reason}</p>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <span className="text-sm">{duration} hari</span>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <StatusIcon className="h-4 w-4" />
-                                                        <Badge className={statusConfig.color} variant="secondary">
-                                                            {statusConfig.label}
-                                                        </Badge>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <PermissionActions id={p.id} status={p.status} />
                                                 </TableCell>
                                             </TableRow>
-                                        )
-                                    })
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="h-24 text-center">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <AlertCircle className="h-8 w-8 text-muted-foreground" />
-                                                <p>Tidak ada data perizinan</p>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                {/* Pagination */}
-                <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                        Menampilkan {permissions?.length || 0} dari {count || 0} data
-                    </p>
-                    <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm" disabled={page <= 1} asChild={page > 1}>
-                            {page > 1 ? (
-                                <Link href={buildUrl({ page: page - 1 })} className="flex items-center">
-                                    <ChevronLeft className="h-4 w-4 mr-1" />
-                                    Sebelumnya
-                                </Link>
-                            ) : (
-                                <span className="flex items-center">
-                                    <ChevronLeft className="h-4 w-4 mr-1" />
-                                    Sebelumnya
-                                </span>
-                            )}
-                        </Button>
-                        <div className="text-sm">Halaman {page} dari {totalPages || 1}</div>
-                        <Button variant="outline" size="sm" disabled={page >= totalPages} asChild={page < totalPages}>
-                            {page < totalPages ? (
-                                <Link href={buildUrl({ page: page + 1 })} className="flex items-center">
-                                    Selanjutnya
-                                    <ChevronRight className="h-4 w-4 ml-1" />
-                                </Link>
-                            ) : (
-                                <span className="flex items-center">
-                                    Selanjutnya
-                                    <ChevronRight className="h-4 w-4 ml-1" />
-                                </span>
-                            )}
-                        </Button>
+                    {/* Pagination */}
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between py-4">
+                        <div className="text-sm text-muted-foreground text-center md:text-left">
+                            Menampilkan {permissions?.length || 0} dari {count || 0} data
+                        </div>
+                        <div className="flex items-center justify-center space-x-2">
+                            <Button variant="outline" size="sm" disabled={page <= 1} asChild={page > 1}>
+                                {page > 1 ? (
+                                    <Link href={buildUrl({ page: page - 1 })} className="flex items-center">
+                                        <ChevronLeft className="h-4 w-4 mr-1" />
+                                        Sebelumnya
+                                    </Link>
+                                ) : (
+                                    <span className="flex items-center">
+                                        <ChevronLeft className="h-4 w-4 mr-1" />
+                                        Sebelumnya
+                                    </span>
+                                )}
+                            </Button>
+                            <div className="text-sm">Halaman {page} dari {totalPages || 1}</div>
+                            <Button variant="outline" size="sm" disabled={page >= totalPages} asChild={page < totalPages}>
+                                {page < totalPages ? (
+                                    <Link href={buildUrl({ page: page + 1 })} className="flex items-center">
+                                        Selanjutnya
+                                        <ChevronRight className="h-4 w-4 ml-1" />
+                                    </Link>
+                                ) : (
+                                    <span className="flex items-center">
+                                        Selanjutnya
+                                        <ChevronRight className="h-4 w-4 ml-1" />
+                                    </span>
+                                )}
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                </TabsContent>
             </Tabs>
         </div>
     )
