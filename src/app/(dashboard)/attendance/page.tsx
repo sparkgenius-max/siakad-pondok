@@ -56,11 +56,11 @@ export default async function AttendancePage({
     }
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6">
-            <div className="flex items-center justify-between">
+        <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Absensi Harian</h2>
-                    <p className="text-muted-foreground">Catat kehadiran santri per kelas per hari</p>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Absensi Harian</h2>
+                    <p className="text-sm md:text-base text-muted-foreground">Catat kehadiran santri per kelas per hari</p>
                 </div>
             </div>
 

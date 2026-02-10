@@ -113,16 +113,16 @@ export default async function DashboardPage() {
     }
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6">
+        <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-                    <p className="text-muted-foreground">Ringkasan data pondok pesantren</p>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h2>
+                    <p className="text-sm md:text-base text-muted-foreground">Ringkasan data pondok pesantren</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <ExportButton />
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs md:text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
                         {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                 </div>

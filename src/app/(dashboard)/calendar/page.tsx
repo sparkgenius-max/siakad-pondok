@@ -17,11 +17,11 @@ export default async function CalendarPage() {
         .order('start_date', { ascending: true })
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6">
-            <div className="flex items-center justify-between">
+        <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Kalender Akademik</h2>
-                    <p className="text-muted-foreground">Jadwal kegiatan, ujian, dan libur pondok</p>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Kalender Akademik</h2>
+                    <p className="text-sm md:text-base text-muted-foreground">Jadwal kegiatan, ujian, dan libur pondok</p>
                 </div>
                 <CalendarEventDialog />
             </div>
