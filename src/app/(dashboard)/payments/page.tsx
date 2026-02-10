@@ -134,15 +134,55 @@ export default async function PaymentsPage({
                         </form>
                     </div>
 
-                    <Card>
-                        <CardContent className="p-0 overflow-hidden">
-                            <div className="overflow-x-auto">
+                    <Card className="overflow-hidden border-none md:border md:border-border bg-transparent md:bg-white shadow-none md:shadow-sm">
+                        <CardContent className="p-0">
+                            {/* Mobile Card List */}
+                            <div className="grid grid-cols-1 gap-3 md:hidden">
+                                {payments.length ? (
+                                    payments.map((p: any) => (
+                                        <div key={p.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3">
+                                            <div className="flex justify-between items-start">
+                                                <div className="space-y-1">
+                                                    <Link href={`/payments/santri/${p.santri?.id}`} className="hover:underline">
+                                                        <h4 className="font-bold text-slate-900">{p.santri?.name}</h4>
+                                                        <p className="text-[10px] text-muted-foreground font-mono bg-slate-100 w-fit px-1 rounded">{p.santri?.nis}</p>
+                                                    </Link>
+                                                </div>
+                                                <Badge variant={p.status === 'paid' ? 'default' : p.status === 'partial' ? 'secondary' : 'destructive'}
+                                                    className={p.status === 'paid' ? 'bg-green-100 text-green-700 border-none' : p.status === 'partial' ? 'bg-yellow-100 text-yellow-700 border-none' : ''}>
+                                                    {p.status === 'paid' ? 'Lunas' : p.status === 'partial' ? 'Sebagian' : 'Belum'}
+                                                </Badge>
+                                            </div>
+
+                                            <div className="flex justify-between items-end pt-2 border-t border-slate-50">
+                                                <div className="text-xs space-y-1">
+                                                    <p className="text-muted-foreground">Periode: <span className="text-slate-700 font-medium">{MONTHS[p.month - 1]?.label} {p.year}</span></p>
+                                                    <p className="text-muted-foreground">Tanggal: <span className="text-slate-700 font-medium">{new Date(p.payment_date).toLocaleDateString('id-ID')}</span></p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-bold text-slate-900">Rp {p.amount?.toLocaleString('id-ID')}</p>
+                                                    <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2" asChild>
+                                                        <Link href={`/payments/santri/${p.santri?.id}`}>Riwayat</Link>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-12 bg-white rounded-xl border">
+                                        <p className="text-muted-foreground">Belum ada data pembayaran.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Desktop Table */}
+                            <div className="hidden md:block">
                                 <Table>
-                                    <TableHeader>
+                                    <TableHeader className="bg-slate-50">
                                         <TableRow>
                                             <TableHead className="whitespace-nowrap">Tanggal</TableHead>
                                             <TableHead>Santri</TableHead>
-                                            <TableHead className="hidden md:table-cell">Periode</TableHead>
+                                            <TableHead>Periode</TableHead>
                                             <TableHead className="text-right">Jumlah</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead className="hidden lg:table-cell">Catatan</TableHead>
@@ -153,24 +193,24 @@ export default async function PaymentsPage({
                                         {payments.length ? (
                                             payments.map((p: any) => (
                                                 <TableRow key={p.id}>
-                                                    <TableCell className="font-medium whitespace-nowrap">
+                                                    <TableCell className="font-medium whitespace-nowrap text-xs">
                                                         {new Date(p.payment_date).toLocaleDateString('id-ID')}
                                                     </TableCell>
                                                     <TableCell>
                                                         <Link href={`/payments/santri/${p.santri?.id}`} className="hover:underline">
-                                                            <div className="font-medium whitespace-nowrap">{p.santri?.name}</div>
-                                                            <div className="text-[10px] text-muted-foreground md:hidden">{p.santri?.nis}</div>
+                                                            <div className="font-semibold text-slate-900">{p.santri?.name}</div>
+                                                            <div className="text-[10px] text-muted-foreground font-mono">{p.santri?.nis}</div>
                                                         </Link>
                                                     </TableCell>
-                                                    <TableCell className="hidden md:table-cell whitespace-nowrap">{MONTHS[p.month - 1]?.label} {p.year}</TableCell>
-                                                    <TableCell className="text-right font-semibold whitespace-nowrap">Rp {p.amount?.toLocaleString('id-ID')}</TableCell>
+                                                    <TableCell className="whitespace-nowrap text-sm">{MONTHS[p.month - 1]?.label} {p.year}</TableCell>
+                                                    <TableCell className="text-right font-bold text-slate-900">Rp {p.amount?.toLocaleString('id-ID')}</TableCell>
                                                     <TableCell>
                                                         <Badge variant={p.status === 'paid' ? 'default' : p.status === 'partial' ? 'secondary' : 'destructive'}
                                                             className={p.status === 'paid' ? 'bg-green-100 text-green-700' : p.status === 'partial' ? 'bg-yellow-100 text-yellow-700' : ''}>
                                                             {p.status === 'paid' ? 'Lunas' : p.status === 'partial' ? 'Sebagian' : 'Belum'}
                                                         </Badge>
                                                     </TableCell>
-                                                    <TableCell className="hidden lg:table-cell max-w-[150px] truncate">{p.notes || '-'}</TableCell>
+                                                    <TableCell className="hidden lg:table-cell max-w-[150px] truncate text-xs text-muted-foreground">{p.notes || '-'}</TableCell>
                                                     <TableCell className="text-right">
                                                         <Button variant="ghost" size="sm" asChild>
                                                             <Link href={`/payments/santri/${p.santri?.id}`}>Riwayat</Link>
@@ -180,7 +220,7 @@ export default async function PaymentsPage({
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={7} className="h-24 text-center">
+                                                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                                                     Belum ada data pembayaran.
                                                 </TableCell>
                                             </TableRow>
@@ -317,60 +357,103 @@ export default async function PaymentsPage({
                         </Card>
                     </div>
 
-                    {/* Santri Payment Status Table */}
-                    <Card>
-                        <CardHeader>
+                    <Card className="overflow-hidden border-none md:border md:border-border bg-transparent md:bg-white shadow-none md:shadow-sm">
+                        <CardHeader className="bg-white md:bg-transparent rounded-t-xl border md:border-none mb-3 md:mb-0">
                             <CardTitle>Status Pembayaran {MONTHS[selectedMonth - 1]?.label} {selectedYear}</CardTitle>
                             <CardDescription>Daftar status pembayaran per santri</CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[50px]">No</TableHead>
-                                        <TableHead>NIS</TableHead>
-                                        <TableHead>Nama Santri</TableHead>
-                                        <TableHead className="text-center">Status</TableHead>
-                                        <TableHead className="text-right">Jumlah</TableHead>
-                                        <TableHead className="text-right">Aksi</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {allSantri.map((santri: any, index: number) => {
-                                        const payment = monthlyPayments.find(p => p.santri_id === santri.id)
-                                        const status = payment?.status || 'unpaid'
-                                        const amount = payment?.amount || 0
+                            {/* Mobile Card List */}
+                            <div className="grid grid-cols-1 gap-3 md:hidden">
+                                {allSantri.map((santri: any) => {
+                                    const payment = monthlyPayments.find(p => p.santri_id === santri.id)
+                                    const status = payment?.status || 'unpaid'
+                                    const amount = payment?.amount || 0
 
-                                        return (
-                                            <TableRow key={santri.id}>
-                                                <TableCell>{index + 1}</TableCell>
-                                                <TableCell className="font-mono">{santri.nis}</TableCell>
-                                                <TableCell className="font-medium">{santri.name}</TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge className={
-                                                        status === 'paid' ? 'bg-green-100 text-green-700' :
-                                                            status === 'partial' ? 'bg-yellow-100 text-yellow-700' :
-                                                                'bg-red-100 text-red-700'
-                                                    }>
-                                                        {status === 'paid' ? 'Lunas' : status === 'partial' ? 'Sebagian' : 'Belum Bayar'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right font-semibold">
-                                                    {amount > 0 ? `Rp ${amount.toLocaleString('id-ID')}` : '-'}
-                                                </TableCell>
-                                                <TableCell className="text-right">
+                                    return (
+                                        <div key={santri.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3">
+                                            <div className="flex justify-between items-start">
+                                                <div className="space-y-1">
+                                                    <h4 className="font-bold text-slate-900">{santri.name}</h4>
+                                                    <span className="text-[10px] text-muted-foreground font-mono bg-slate-100 px-1 rounded">{santri.nis}</span>
+                                                </div>
+                                                <Badge className={
+                                                    status === 'paid' ? 'bg-green-100 text-green-700 border-none' :
+                                                        status === 'partial' ? 'bg-yellow-100 text-yellow-700 border-none' :
+                                                            'bg-red-100 text-red-700 border-none'
+                                                }>
+                                                    {status === 'paid' ? 'Lunas' : status === 'partial' ? 'Sebagian' : 'Belum Bayar'}
+                                                </Badge>
+                                            </div>
+
+                                            <div className="flex justify-between items-center pt-2 border-t border-slate-50">
+                                                <div className="text-sm font-bold text-slate-900">
+                                                    {amount > 0 ? `Rp ${amount.toLocaleString('id-ID')}` : 'Rp 0'}
+                                                </div>
+                                                <div className="flex gap-2">
                                                     {status !== 'paid' && (
                                                         <PaymentDialog santriList={[santri]} defaultSantriId={santri.id} defaultMonth={selectedMonth} defaultYear={selectedYear} />
                                                     )}
-                                                    <Button variant="ghost" size="sm" asChild>
+                                                    <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
                                                         <Link href={`/payments/santri/${santri.id}`}>Riwayat</Link>
                                                     </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block">
+                                <Table>
+                                    <TableHeader className="bg-slate-50">
+                                        <TableRow>
+                                            <TableHead className="w-[50px]">No</TableHead>
+                                            <TableHead>NIS</TableHead>
+                                            <TableHead>Nama Santri</TableHead>
+                                            <TableHead className="text-center">Status</TableHead>
+                                            <TableHead className="text-right">Jumlah</TableHead>
+                                            <TableHead className="text-right">Aksi</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {allSantri.map((santri: any, index: number) => {
+                                            const payment = monthlyPayments.find(p => p.santri_id === santri.id)
+                                            const status = payment?.status || 'unpaid'
+                                            const amount = payment?.amount || 0
+
+                                            return (
+                                                <TableRow key={santri.id}>
+                                                    <TableCell className="text-muted-foreground text-xs">{index + 1}</TableCell>
+                                                    <TableCell className="font-mono text-sm">{santri.nis}</TableCell>
+                                                    <TableCell className="font-semibold text-slate-900">{santri.name}</TableCell>
+                                                    <TableCell className="text-center">
+                                                        <Badge className={
+                                                            status === 'paid' ? 'bg-green-100 text-green-700' :
+                                                                status === 'partial' ? 'bg-yellow-100 text-yellow-700' :
+                                                                    'bg-red-100 text-red-700'
+                                                        }>
+                                                            {status === 'paid' ? 'Lunas' : status === 'partial' ? 'Sebagian' : 'Belum Bayar'}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-bold text-slate-900">
+                                                        {amount > 0 ? `Rp ${amount.toLocaleString('id-ID')}` : '-'}
+                                                    </TableCell>
+                                                    <TableCell className="text-right space-x-2">
+                                                        {status !== 'paid' && (
+                                                            <PaymentDialog santriList={[santri]} defaultSantriId={santri.id} defaultMonth={selectedMonth} defaultYear={selectedYear} />
+                                                        )}
+                                                        <Button variant="ghost" size="sm" asChild>
+                                                            <Link href={`/payments/santri/${santri.id}`}>Riwayat</Link>
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

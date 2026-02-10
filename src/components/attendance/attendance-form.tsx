@@ -98,81 +98,139 @@ export function AttendanceForm({ santriList, existingAttendance, date, className
                 </Button>
             </CardHeader>
             <CardContent className="p-0">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[50px]">No</TableHead>
-                            <TableHead>NIS</TableHead>
-                            <TableHead>Nama Santri</TableHead>
-                            <TableHead className="text-center w-[100px]">Hadir</TableHead>
-                            <TableHead className="text-center w-[100px]">Sakit</TableHead>
-                            <TableHead className="text-center w-[100px]">Izin</TableHead>
-                            <TableHead className="text-center w-[100px]">Alpha</TableHead>
-                            <TableHead>Catatan</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {santriList.map((santri, index) => {
-                            const status = statuses[santri.id]
+                {/* Mobile Card List View */}
+                <div className="md:hidden space-y-3 p-3 bg-slate-50">
+                    {santriList.map((santri) => {
+                        const status = statuses[santri.id]
+                        return (
+                            <div key={santri.id} className={`bg-white p-4 rounded-xl border-2 transition-all ${status === 'alpha' ? 'border-red-200' : 'border-transparent shadow-sm'}`}>
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h4 className="font-bold text-slate-900">{santri.name}</h4>
+                                        <p className="text-xs text-muted-foreground font-mono">{santri.nis}</p>
+                                    </div>
+                                </div>
 
-                            return (
-                                <TableRow key={santri.id} className={status === 'alpha' ? 'bg-red-50' : ''}>
-                                    <TableCell className="text-muted-foreground">{index + 1}</TableCell>
-                                    <TableCell className="font-mono text-sm">{santri.nis}</TableCell>
-                                    <TableCell className="font-medium">{santri.name}</TableCell>
+                                <div className="grid grid-cols-4 gap-2 mb-4">
+                                    {[
+                                        { id: 'present', label: 'Hadir', color: 'bg-green-100 text-green-700', active: 'bg-green-600 text-white ring-green-200' },
+                                        { id: 'sick', label: 'Sakit', color: 'bg-yellow-100 text-yellow-700', active: 'bg-yellow-600 text-white ring-yellow-200' },
+                                        { id: 'permission', label: 'Izin', color: 'bg-blue-100 text-blue-700', active: 'bg-blue-600 text-white ring-blue-200' },
+                                        { id: 'alpha', label: 'Alpha', color: 'bg-red-100 text-red-700', active: 'bg-red-600 text-white ring-red-200' }
+                                    ].map((opt) => (
+                                        <button
+                                            key={opt.id}
+                                            type="button"
+                                            onClick={() => updateStatus(santri.id, opt.id as any)}
+                                            className={`flex flex-col items-center justify-center p-2 rounded-lg text-[10px] font-bold transition-all border outline-none ${status === opt.id
+                                                    ? `${opt.active} border-transparent ring-4`
+                                                    : 'bg-slate-50 text-slate-500 border-slate-100'
+                                                }`}
+                                        >
+                                            <span className="mb-1">{opt.label}</span>
+                                            <input
+                                                type="radio"
+                                                name={`status_mobile_${santri.id}`}
+                                                checked={status === opt.id}
+                                                onChange={() => { }} // Controlled by button
+                                                className="hidden"
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
 
-                                    {/* Status Radio Buttons */}
-                                    <TableCell className="text-center">
-                                        <input
-                                            type="radio"
-                                            name={`status_${santri.id}`}
-                                            checked={status === 'present'}
-                                            onChange={() => updateStatus(santri.id, 'present')}
-                                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
-                                        />
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <input
-                                            type="radio"
-                                            name={`status_${santri.id}`}
-                                            checked={status === 'sick'}
-                                            onChange={() => updateStatus(santri.id, 'sick')}
-                                            className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300"
-                                        />
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <input
-                                            type="radio"
-                                            name={`status_${santri.id}`}
-                                            checked={status === 'permission'}
-                                            onChange={() => updateStatus(santri.id, 'permission')}
-                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                                        />
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <input
-                                            type="radio"
-                                            name={`status_${santri.id}`}
-                                            checked={status === 'alpha'}
-                                            onChange={() => updateStatus(santri.id, 'alpha')}
-                                            className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300"
-                                        />
-                                    </TableCell>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Tambahkan catatan khusus..."
+                                        value={notes[santri.id] || ''}
+                                        onChange={(e) => updateNote(santri.id, e.target.value)}
+                                        className="w-full text-xs bg-slate-50 border-slate-100 rounded-lg py-2 px-3 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all outline-none"
+                                    />
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
 
-                                    <TableCell>
-                                        <input
-                                            type="text"
-                                            placeholder="Catatan..."
-                                            value={notes[santri.id] || ''}
-                                            onChange={(e) => updateNote(santri.id, e.target.value)}
-                                            className="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            )
-                        })}
-                    </TableBody>
-                </Table>
+                {/* Desktop Table View */}
+                <div className="hidden md:block">
+                    <Table>
+                        <TableHeader className="bg-slate-50">
+                            <TableRow>
+                                <TableHead className="w-[50px]">No</TableHead>
+                                <TableHead>NIS</TableHead>
+                                <TableHead>Nama Santri</TableHead>
+                                <TableHead className="text-center w-[100px]">Hadir</TableHead>
+                                <TableHead className="text-center w-[100px]">Sakit</TableHead>
+                                <TableHead className="text-center w-[100px]">Izin</TableHead>
+                                <TableHead className="text-center w-[100px]">Alpha</TableHead>
+                                <TableHead>Catatan</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {santriList.map((santri, index) => {
+                                const status = statuses[santri.id]
+
+                                return (
+                                    <TableRow key={santri.id} className={status === 'alpha' ? 'bg-red-50' : ''}>
+                                        <TableCell className="text-muted-foreground text-xs">{index + 1}</TableCell>
+                                        <TableCell className="font-mono text-sm">{santri.nis}</TableCell>
+                                        <TableCell className="font-semibold text-slate-900">{santri.name}</TableCell>
+
+                                        {/* Status Radio Buttons */}
+                                        <TableCell className="text-center">
+                                            <input
+                                                type="radio"
+                                                name={`status_${santri.id}`}
+                                                checked={status === 'present'}
+                                                onChange={() => updateStatus(santri.id, 'present')}
+                                                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 cursor-pointer"
+                                            />
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <input
+                                                type="radio"
+                                                name={`status_${santri.id}`}
+                                                checked={status === 'sick'}
+                                                onChange={() => updateStatus(santri.id, 'sick')}
+                                                className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 cursor-pointer"
+                                            />
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <input
+                                                type="radio"
+                                                name={`status_${santri.id}`}
+                                                checked={status === 'permission'}
+                                                onChange={() => updateStatus(santri.id, 'permission')}
+                                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer"
+                                            />
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <input
+                                                type="radio"
+                                                name={`status_${santri.id}`}
+                                                checked={status === 'alpha'}
+                                                onChange={() => updateStatus(santri.id, 'alpha')}
+                                                className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 cursor-pointer"
+                                            />
+                                        </TableCell>
+
+                                        <TableCell>
+                                            <input
+                                                type="text"
+                                                placeholder="Catatan..."
+                                                value={notes[santri.id] || ''}
+                                                onChange={(e) => updateNote(santri.id, e.target.value)}
+                                                className="w-full text-xs border-slate-200 rounded-md py-1.5 px-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
             </CardContent>
         </Card>
     )

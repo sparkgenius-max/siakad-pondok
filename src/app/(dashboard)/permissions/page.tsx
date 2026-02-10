@@ -194,15 +194,58 @@ export default async function PermissionsPage({
                 </div>
 
                 <TabsContent value={statusFilter} className="space-y-4">
-                    <Card className="overflow-hidden">
+                    <Card className="overflow-hidden border-none md:border md:border-border bg-transparent md:bg-white shadow-none md:shadow-sm">
                         <CardContent className="p-0">
-                            <div className="overflow-x-auto">
+                            {/* Mobile Card List */}
+                            <div className="grid grid-cols-1 gap-3 md:hidden">
+                                {permissions?.length ? (
+                                    permissions.map((p: any) => {
+                                        const typeConfig = TYPE_LABELS[p.type] || TYPE_LABELS.other
+                                        return (
+                                            <div key={p.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="space-y-1">
+                                                        <h4 className="font-bold text-slate-900">{p.santri?.name}</h4>
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge variant="outline" className={`${typeConfig.color} text-[10px] h-5 border-none px-1.5`}>
+                                                                {typeConfig.label}
+                                                            </Badge>
+                                                            <span className="text-[10px] text-muted-foreground font-mono bg-slate-100 px-1 rounded">{p.santri?.nis}</span>
+                                                        </div>
+                                                    </div>
+                                                    <Badge variant={p.status === 'approved' ? 'default' : p.status === 'pending' ? 'secondary' : 'destructive'}
+                                                        className={p.status === 'approved' ? 'bg-green-100 text-green-700 hover:bg-green-100 border-none' : p.status === 'pending' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-none' : ''}>
+                                                        {p.status === 'approved' ? 'Disetujui' : p.status === 'pending' ? 'Menunggu' : 'Ditolak'}
+                                                    </Badge>
+                                                </div>
+
+                                                <div className="flex flex-col gap-1 py-1">
+                                                    <p className="text-xs text-muted-foreground">Alasan: <span className="text-slate-700 font-medium italic">"{p.reason}"</span></p>
+                                                    <p className="text-xs text-muted-foreground">Periode: <span className="text-slate-700 font-medium">{new Date(p.start_date).toLocaleDateString('id-ID')} - {new Date(p.end_date).toLocaleDateString('id-ID')}</span></p>
+                                                </div>
+
+                                                <div className="flex justify-end pt-2 border-t border-slate-50">
+                                                    <PermissionActions id={p.id} status={p.status} />
+                                                </div>
+                                            </div>
+                                        )
+                                    })
+                                ) : (
+                                    <div className="text-center py-12 bg-white rounded-xl border">
+                                        <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                        <p className="text-muted-foreground font-medium">Tidak ada data perizinan</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block">
                                 <Table>
-                                    <TableHeader>
+                                    <TableHeader className="bg-slate-50">
                                         <TableRow>
                                             <TableHead>Santri</TableHead>
-                                            <TableHead className="hidden sm:table-cell">Jenis</TableHead>
-                                            <TableHead className="hidden md:table-cell">Tanggal</TableHead>
+                                            <TableHead>Jenis</TableHead>
+                                            <TableHead>Tanggal</TableHead>
                                             <TableHead className="hidden lg:table-cell">Alasan</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead className="text-right">Aksi</TableHead>
@@ -215,23 +258,18 @@ export default async function PermissionsPage({
                                                 return (
                                                     <TableRow key={p.id}>
                                                         <TableCell>
-                                                            <div className="font-medium whitespace-nowrap">{p.santri?.name}</div>
-                                                            <div className="text-[10px] text-muted-foreground sm:hidden">
-                                                                {typeConfig.label}
-                                                            </div>
-                                                            <div className="text-[10px] text-muted-foreground md:hidden">
-                                                                {new Date(p.start_date).toLocaleDateString('id-ID')}
-                                                            </div>
+                                                            <div className="font-semibold text-slate-900">{p.santri?.name}</div>
+                                                            <div className="text-[10px] text-muted-foreground font-mono">{p.santri?.nis}</div>
                                                         </TableCell>
-                                                        <TableCell className="hidden sm:table-cell font-medium">
-                                                            <Badge variant="outline" className={typeConfig.color}>
+                                                        <TableCell>
+                                                            <Badge variant="outline" className={`${typeConfig.color} border-none`}>
                                                                 {typeConfig.label}
                                                             </Badge>
                                                         </TableCell>
-                                                        <TableCell className="hidden md:table-cell whitespace-nowrap text-xs">
+                                                        <TableCell className="whitespace-nowrap text-xs">
                                                             {new Date(p.start_date).toLocaleDateString('id-ID')} - {new Date(p.end_date).toLocaleDateString('id-ID')}
                                                         </TableCell>
-                                                        <TableCell className="hidden lg:table-cell max-w-[200px] truncate">
+                                                        <TableCell className="hidden lg:table-cell max-w-[200px] truncate text-xs text-muted-foreground italic">
                                                             {p.reason}
                                                         </TableCell>
                                                         <TableCell>
@@ -251,7 +289,7 @@ export default async function PermissionsPage({
                                                 <TableCell colSpan={6} className="h-24 text-center">
                                                     <div className="flex flex-col items-center gap-2">
                                                         <AlertCircle className="h-8 w-8 text-muted-foreground" />
-                                                        <p>Tidak ada data perizinan</p>
+                                                        <p className="text-muted-foreground">Tidak ada data perizinan</p>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
