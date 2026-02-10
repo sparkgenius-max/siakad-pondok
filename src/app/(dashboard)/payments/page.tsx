@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Search, DollarSign, Users, CheckCircle, AlertCircle, Calendar } from 'lucide-react'
+import { PaginationLimit } from '@/components/layout/pagination-limit'
 
 const MONTHS = [
     { value: '1', label: 'Januari' },
@@ -41,12 +42,12 @@ const MONTHS = [
 export default async function PaymentsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string; q?: string; month?: string; year?: string; tab?: string }>
+    searchParams: Promise<{ page?: string; q?: string; month?: string; year?: string; tab?: string; limit?: string }>
 }) {
     const params = await searchParams
     const supabase = await createClient()
     const page = Number(params.page) || 1
-    const limit = 15
+    const limit = Number(params.limit) || 15
     const from = (page - 1) * limit
     const to = from + limit - 1
 
@@ -191,12 +192,17 @@ export default async function PaymentsPage({
                     </Card>
 
                     {/* Pagination */}
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                            Menampilkan {payments.length} dari {count} data
-                        </p>
-                        <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm" disabled={page <= 1} asChild={page > 1}>
+                    <div className="flex flex-col gap-4 py-6 md:flex-row md:items-center md:justify-between">
+                        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                            <p className="text-xs md:text-sm text-muted-foreground text-center md:text-left">
+                                Menampilkan <span className="font-medium text-slate-900">{payments.length}</span> dari <span className="font-medium text-slate-900">{count}</span> data
+                            </p>
+                            <div className="flex justify-center md:ml-4">
+                                <PaginationLimit currentLimit={limit} />
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-center gap-2">
+                            <Button variant="outline" size="sm" disabled={page <= 1} asChild={page > 1} className="h-9 px-4 rounded-lg">
                                 {page > 1 ? (
                                     <Link href={buildUrl({ page: page - 1 })} className="flex items-center">
                                         <ChevronLeft className="h-4 w-4 mr-1" />
@@ -209,8 +215,10 @@ export default async function PaymentsPage({
                                     </span>
                                 )}
                             </Button>
-                            <div className="text-sm">Halaman {page} dari {totalPages || 1}</div>
-                            <Button variant="outline" size="sm" disabled={page >= totalPages} asChild={page < totalPages}>
+                            <div className="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-medium">
+                                {page} / {totalPages || 1}
+                            </div>
+                            <Button variant="outline" size="sm" disabled={page >= totalPages} asChild={page < totalPages} className="h-9 px-4 rounded-lg">
                                 {page < totalPages ? (
                                     <Link href={buildUrl({ page: page + 1 })} className="flex items-center">
                                         Selanjutnya

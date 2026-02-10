@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Search, GraduationCap, BookOpen, Users, TrendingUp } from 'lucide-react'
+import { PaginationLimit } from '@/components/layout/pagination-limit'
 
 const SEMESTERS = [
     { value: 'Ganjil', label: 'Ganjil (Semester 1)' },
@@ -38,12 +39,12 @@ const SUBJECTS = [
 export default async function GradesPage({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string; q?: string; tab?: string; class?: string; semester?: string; year?: string }>
+    searchParams: Promise<{ page?: string; q?: string; tab?: string; class?: string; semester?: string; year?: string; limit?: string }>
 }) {
     const params = await searchParams
     const supabase = await createClient()
     const page = Number(params.page) || 1
-    const limit = 20
+    const limit = Number(params.limit) || 20
     const from = (page - 1) * limit
     const to = from + limit - 1
     const activeTab = params.tab || 'all'
@@ -249,12 +250,17 @@ export default async function GradesPage({
                         </CardContent>
                     </Card>
 
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between py-4">
-                        <div className="text-sm text-muted-foreground text-center md:text-left">
-                            Menampilkan {grades?.length || 0} dari {count || 0} data
+                    <div className="flex flex-col gap-4 py-6 md:flex-row md:items-center md:justify-between">
+                        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                            <p className="text-xs md:text-sm text-muted-foreground text-center md:text-left">
+                                Menampilkan <span className="font-medium text-slate-900">{grades?.length || 0}</span> dari <span className="font-medium text-slate-900">{count || 0}</span> data
+                            </p>
+                            <div className="flex justify-center md:ml-4">
+                                <PaginationLimit currentLimit={limit} />
+                            </div>
                         </div>
-                        <div className="flex items-center justify-center space-x-2">
-                            <Button variant="outline" size="sm" disabled={page <= 1} asChild={page > 1}>
+                        <div className="flex items-center justify-center gap-2">
+                            <Button variant="outline" size="sm" disabled={page <= 1} asChild={page > 1} className="h-9 px-4 rounded-lg">
                                 {page > 1 ? (
                                     <Link href={buildUrl({ page: page - 1 })} className="flex items-center">
                                         <ChevronLeft className="h-4 w-4 mr-1" />
@@ -267,8 +273,10 @@ export default async function GradesPage({
                                     </span>
                                 )}
                             </Button>
-                            <div className="text-sm">Halaman {page} dari {totalPages || 1}</div>
-                            <Button variant="outline" size="sm" disabled={page >= totalPages} asChild={page < totalPages}>
+                            <div className="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-medium">
+                                {page} / {totalPages || 1}
+                            </div>
+                            <Button variant="outline" size="sm" disabled={page >= totalPages} asChild={page < totalPages} className="h-9 px-4 rounded-lg">
                                 {page < totalPages ? (
                                     <Link href={buildUrl({ page: page + 1 })} className="flex items-center">
                                         Selanjutnya
