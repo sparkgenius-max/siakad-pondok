@@ -25,9 +25,17 @@ export default async function MonitoringPage() {
         console.error("Error fetching monitoring:", error)
     }
 
-    // Simple Stats
-    const totalZiyadah = monitoringLogs?.reduce((acc, curr) => acc + (curr.ziyadah_pages || 0), 0) || 0
-    const totalMurojaah = monitoringLogs?.reduce((acc, curr) => acc + (curr.murojaah_juz || 0), 0) || 0
+    const today = new Date().toISOString().split('T')[0]
+    const { count: entriesToday } = await supabase
+        .from('monitoring_tahfidz')
+        .select('*', { count: 'exact', head: true })
+        .eq('date', today)
+
+    const { count: totalSantriTahfidz } = await supabase
+        .from('santri')
+        .select('*', { count: 'exact', head: true })
+        .eq('program', 'Tahfidz')
+        .eq('status', 'active')
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
@@ -39,31 +47,31 @@ export default async function MonitoringPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
+                <Card className="border-l-4 border-l-emerald-500 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Total Ziyadah (Halaman)
+                            Setoran Hari Ini
                         </CardTitle>
-                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                        <BookOpen className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{totalZiyadah}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Dari 50 entri terakhir
+                        <div className="text-2xl font-bold">{entriesToday || 0}</div>
+                        <p className="text-xs text-muted-foreground italic">
+                            Santri yang sudah melakukan setoran hari ini
                         </p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="border-l-4 border-l-blue-500 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Total Murojaah (Juz)
+                            Total Santri Tahfidz
                         </CardTitle>
-                        <Repeat className="h-4 w-4 text-muted-foreground" />
+                        <Repeat className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{totalMurojaah}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Dari 50 entri terakhir
+                        <div className="text-2xl font-bold">{totalSantriTahfidz || 0}</div>
+                        <p className="text-xs text-muted-foreground italic">
+                            Jumlah santri aktif di program Tahfidz
                         </p>
                     </CardContent>
                 </Card>

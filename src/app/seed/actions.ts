@@ -15,7 +15,7 @@ export async function seedUser(email: string, role: string, name: string) {
     }
     console.log('Sending metadata:', metadata)
 
-    const { data: user, error: createError } = await supabase.auth.admin.createUser({
+    let { data: user, error: createError } = await supabase.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
@@ -23,9 +23,26 @@ export async function seedUser(email: string, role: string, name: string) {
     })
 
     if (createError) {
-        // If user already exists, we might want to update their password to be sure or just return success if it's fine.
-        console.error('Error creating user:', createError)
-        return { success: false, error: createError.message }
+        if (createError.message.toLowerCase().includes('already registered') || createError.status === 422) {
+            console.log('User already exists, updating password instead...')
+            const { data: { users } } = await supabase.auth.admin.listUsers()
+            const existingUser = users.find(u => u.email === email)
+
+            if (existingUser) {
+                const { error: updateError } = await supabase.auth.admin.updateUserById(
+                    existingUser.id,
+                    { password: password, user_metadata: metadata }
+                )
+                if (updateError) return { success: false, error: updateError.message }
+
+                // Continue to profile update
+                user = { user: existingUser as any }
+            } else {
+                return { success: false, error: createError.message }
+            }
+        } else {
+            return { success: false, error: createError.message }
+        }
     }
 
     if (!user.user) {

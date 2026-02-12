@@ -11,7 +11,7 @@ export default async function DashboardLayout({
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    let role = 'ustadz'
+    let role = 'guru'
     let profileError = null
     let profileData = null
 

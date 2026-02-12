@@ -20,7 +20,7 @@ const routes = [
         icon: LayoutDashboard,
         href: '/',
         color: 'text-sky-500',
-        roles: ['admin', 'pengasuh']
+        roles: ['admin', 'pengasuh', 'guru']
     },
     {
         label: 'Data Santri',
@@ -48,21 +48,21 @@ const routes = [
         icon: GraduationCap,
         href: '/grades',
         color: 'text-emerald-500',
-        roles: ['admin', 'pengasuh', 'ustadz']
+        roles: ['admin', 'pengasuh', 'guru']
     },
     {
         label: 'Absensi',
         icon: FileText,
         href: '/attendance',
         color: 'text-yellow-500',
-        roles: ['admin', 'pengasuh', 'ustadz']
+        roles: ['admin', 'pengasuh', 'guru']
     },
     {
         label: 'Monitoring Tahfidz',
         icon: BookOpen,
         href: '/monitoring',
         color: 'text-teal-500',
-        roles: ['admin', 'pengasuh', 'ustadz']
+        roles: ['admin', 'pengasuh', 'guru']
     },
     {
         label: 'Raport',
@@ -76,7 +76,7 @@ const routes = [
         icon: Calendar,
         href: '/calendar',
         color: 'text-indigo-500',
-        roles: ['admin', 'pengasuh', 'ustadz']
+        roles: ['admin', 'pengasuh', 'guru']
     },
     // {
     //     label: 'Pengguna',
@@ -94,11 +94,14 @@ interface SidebarProps {
 import { UserNav } from '@/components/layout/user-nav'
 import { logout } from '@/app/(auth)/login/actions'
 
-export function Sidebar({ role = 'ustadz' }: SidebarProps) {
+export function Sidebar({ role = 'guru' }: SidebarProps) {
     const pathname = usePathname()
 
+    // Normalize role (handle legacy 'ustadz' name)
+    const normalizedRole = role === 'ustadz' ? 'guru' : role;
+
     const filteredRoutes = routes.filter(route =>
-        route.roles.includes(role as string)
+        route.roles.includes(normalizedRole as string)
     )
 
     return (

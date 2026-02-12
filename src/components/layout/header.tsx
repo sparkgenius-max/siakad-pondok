@@ -6,7 +6,7 @@ export default async function Header() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    let role = 'ustadz'
+    let role = 'guru'
     if (user) {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
         if (profile) {

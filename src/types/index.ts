@@ -2,7 +2,7 @@ export type Profile = {
     id: string;
     email: string;
     full_name: string;
-    role: 'admin' | 'ustadz' | 'pengasuh';
+    role: 'admin' | 'guru' | 'pengasuh';
     created_at: string;
 };
 

@@ -71,7 +71,7 @@ export default function SeedPage() {
                             <p className="text-xs">guruidaman@siakad.com</p>
                         </div>
                         <Button
-                            onClick={() => handleSignup('guruidaman@siakad.com', 'ustadz', 'Guru IDAMAN')}
+                            onClick={() => handleSignup('guruidaman@siakad.com', 'guru', 'Guru IDAMAN')}
                             disabled={loading}
                         >
                             Register Guru
