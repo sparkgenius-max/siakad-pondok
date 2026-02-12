@@ -6,7 +6,11 @@ import { Sidebar } from './sidebar'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 
-export const MobileSidebar = () => {
+interface MobileSidebarProps {
+    role?: string
+}
+
+export const MobileSidebar = ({ role }: MobileSidebarProps) => {
     const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
@@ -24,8 +28,8 @@ export const MobileSidebar = () => {
                     <Menu />
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 border-none w-64">
-                <Sidebar />
+            <SheetContent side="left" className="p-0 border-none w-64 bg-slate-900">
+                <Sidebar role={role} />
             </SheetContent>
         </Sheet>
     )

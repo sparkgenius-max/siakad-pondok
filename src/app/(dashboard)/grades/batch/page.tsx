@@ -14,16 +14,22 @@ import { BatchGradeForm } from '@/components/grades/batch-grade-form'
 
 // Mata pelajaran
 const SUBJECTS = [
-    'Al-Quran', 'Tajwid', 'Tafsir', 'Hadits', 'Fiqih', 'Ushul Fiqih',
-    'Aqidah', 'Akhlaq', 'Nahwu', 'Shorof', 'Balaghah', 'Muthalaah',
-    'Imla', 'Insya', 'Mahfudzat', 'Tarikh Islam', 'Bahasa Arab',
-    'Bahasa Indonesia', 'Bahasa Inggris', 'Matematika', 'IPA', 'IPS'
+    'AL-MIFTAH JILID 1',
+    'AL-MIFTAH JILID 2',
+    'AL-MIFTAH JILID 3',
+    'AL-MIFTAH JILID 4',
+    'SORROF',
+    'BACA KITAB',
+    'TAKLIM KITAB SUBUH',
+    'TAKLIM KITAB ISYA’'
 ]
 
 const SEMESTERS = [
     { value: 'Ganjil', label: 'Ganjil (Semester 1)' },
     { value: 'Genap', label: 'Genap (Semester 2)' },
 ]
+
+export const dynamic = 'force-dynamic'
 
 export default async function BatchGradePage({
     searchParams,
@@ -44,6 +50,7 @@ export default async function BatchGradePage({
         .from('santri')
         .select('class')
         .eq('status', 'active')
+        .eq('program', 'Diniyah')
     const uniqueClasses = [...new Set(classesData?.map(s => s.class).filter(Boolean))].sort()
 
     // Get santri for selected class
@@ -56,6 +63,7 @@ export default async function BatchGradePage({
             .select('id, name, nis')
             .eq('class', selectedClass)
             .eq('status', 'active')
+            .eq('program', 'Diniyah')
             .order('name')
         classSantri = santriData || []
 
@@ -69,6 +77,7 @@ export default async function BatchGradePage({
                 .eq('subject', selectedSubject)
                 .eq('semester', selectedSemester)
                 .eq('academic_year', selectedYear)
+                .eq('program_type', 'Diniyah')
             existingGrades = gradesData || []
         }
     }

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     let data: any[] = []
 
     switch (type) {
@@ -58,11 +59,14 @@ export async function GET(request: NextRequest) {
             data = (gradeData || []).map(g => ({
                 NIS: g.santri?.nis,
                 'Nama Santri': g.santri?.name,
+                'Program': g.program_type,
                 Kelas: g.santri?.class,
                 'Mata Pelajaran': g.subject,
                 Semester: g.semester,
                 'Tahun Ajaran': g.academic_year,
-                Nilai: g.grade,
+                'Teori': g.score_theory,
+                'Praktik': g.score_practice,
+                'Total': g.score_total,
                 Catatan: g.notes || '-'
             }))
             break
@@ -74,14 +78,18 @@ export async function GET(request: NextRequest) {
                 .order('created_at', { ascending: false })
 
             const typeLabels: Record<string, string> = {
+                pulang: 'Pulang',
+                kegiatan_luar: 'Kegiatan Luar',
+                organisasi: 'Organisasi',
                 sick: 'Sakit',
-                permit: 'Izin',
-                late: 'Terlambat',
-                other: 'Lainnya'
+                permit: 'Izin'
             }
 
             const statusLabels: Record<string, string> = {
                 pending: 'Menunggu',
+                berlangsung: 'Berlangsung',
+                selesai: 'Selesai',
+                terlambat: 'Terlambat',
                 approved: 'Disetujui',
                 rejected: 'Ditolak'
             }

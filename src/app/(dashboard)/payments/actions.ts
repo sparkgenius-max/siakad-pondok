@@ -1,10 +1,14 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 export async function createPayment(prevState: any, formData: FormData) {
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    const adminDb = createAdminClient()
 
     const data = {
         santri_id: formData.get('santri_id') as string,
@@ -14,10 +18,10 @@ export async function createPayment(prevState: any, formData: FormData) {
         year: parseInt(formData.get('year') as string),
         status: formData.get('status') as string,
         notes: formData.get('notes') as string,
-        created_by: (await supabase.auth.getUser()).data.user?.id,
+
     }
 
-    const { error } = await supabase.from('payments').insert(data)
+    const { error } = await adminDb.from('payments').insert(data)
 
     if (error) {
         return { error: error.message }
@@ -29,9 +33,10 @@ export async function createPayment(prevState: any, formData: FormData) {
 }
 
 export async function updatePayment(prevState: any, formData: FormData) {
-    const supabase = await createClient()
     const id = formData.get('id') as string
     const santri_id = formData.get('santri_id') as string
+
+    const adminDb = createAdminClient()
 
     const data = {
         amount: parseFloat(formData.get('amount') as string),
@@ -42,7 +47,7 @@ export async function updatePayment(prevState: any, formData: FormData) {
         notes: formData.get('notes') as string,
     }
 
-    const { error } = await supabase.from('payments').update(data).eq('id', id)
+    const { error } = await adminDb.from('payments').update(data).eq('id', id)
 
     if (error) {
         return { error: error.message }
@@ -54,8 +59,8 @@ export async function updatePayment(prevState: any, formData: FormData) {
 }
 
 export async function deletePayment(id: string, santriId?: string) {
-    const supabase = await createClient()
-    const { error } = await supabase.from('payments').delete().eq('id', id)
+    const adminDb = createAdminClient()
+    const { error } = await adminDb.from('payments').delete().eq('id', id)
 
     if (error) {
         throw new Error(error.message)
@@ -79,6 +84,8 @@ export async function generateBulkPayments(data: BulkPaymentData) {
     const userId = (await supabase.auth.getUser()).data.user?.id
     const today = new Date().toISOString().split('T')[0]
 
+    const adminDb = createAdminClient()
+
     const records = data.santri_ids.map(santri_id => ({
         santri_id,
         amount: data.amount,
@@ -87,10 +94,10 @@ export async function generateBulkPayments(data: BulkPaymentData) {
         payment_date: today,
         status: 'paid',
         notes: 'Generated via bulk payment',
-        created_by: userId
+
     }))
 
-    const { error } = await supabase.from('payments').insert(records)
+    const { error } = await adminDb.from('payments').insert(records)
 
     if (error) {
         return { error: error.message }

@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { ExportButton } from '@/components/export-button'
 import {
@@ -19,8 +20,10 @@ import {
     ListChecks
 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const today = new Date().toISOString().split('T')[0]
     const currentMonth = new Date().getMonth() + 1
     const currentYear = new Date().getFullYear()
@@ -29,49 +32,32 @@ export default async function DashboardPage() {
     const [
         santriResult,
         activeSantriResult,
-        pendingPermissionsResult,
         activePermissionsResult,
         paymentsThisMonthResult,
-        unpaidThisMonthResult,
         totalGradesResult,
         recentPaymentsResult,
-        pendingPermissionsListResult,
         presentTodayResult
     ] = await Promise.all([
         // Total santri
         supabase.from('santri').select('*', { count: 'exact', head: true }),
         // Santri aktif
         supabase.from('santri').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-        // Perizinan pending
-        supabase.from('permissions').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         // Santri sedang izin hari ini
         supabase.from('permissions')
             .select('*, santri(name, class)')
-            .eq('status', 'approved')
+            .in('status', ['approved', 'berlangsung'])
             .lte('start_date', today)
             .gte('end_date', today),
-        // Pembayaran bulan ini
+        // Pembayaran bulan ini (Semua status: paid & partial)
         supabase.from('payments')
-            .select('amount')
-            .eq('month', currentMonth)
-            .eq('year', currentYear)
-            .eq('status', 'paid'),
-        // Yang belum bayar bulan ini (santri aktif - yang sudah bayar)
-        supabase.from('payments')
-            .select('santri_id', { count: 'exact', head: true })
+            .select('amount, santri_id')
             .eq('month', currentMonth)
             .eq('year', currentYear),
         // Total nilai
         supabase.from('grades').select('*', { count: 'exact', head: true }),
         // 5 pembayaran terakhir
         supabase.from('payments')
-            .select('id, amount, month, year, status, payment_date, santri(name, nis)')
-            .order('created_at', { ascending: false })
-            .limit(5),
-        // 5 perizinan pending
-        supabase.from('permissions')
-            .select('id, type, start_date, end_date, reason, santri(name, class)')
-            .eq('status', 'pending')
+            .select('id, amount, month, year, status, payment_date, santri(id, name, nis)')
             .order('created_at', { ascending: false })
             .limit(5),
         // Absensi hari ini (Hadir)
@@ -83,18 +69,19 @@ export default async function DashboardPage() {
 
     const totalSantri = santriResult.count || 0
     const activeSantri = activeSantriResult.count || 0
-    const pendingPermissions = pendingPermissionsResult.count || 0
     const activePermissions = activePermissionsResult.data || []
     const paymentsThisMonth = paymentsThisMonthResult.data || []
-    const paidCount = unpaidThisMonthResult.count || 0
-    const unpaidCount = activeSantri - paidCount
     const totalGrades = totalGradesResult.count || 0
     const recentPayments = recentPaymentsResult.data || []
-    const pendingPermissionsList = pendingPermissionsListResult.data || []
     const presentToday = presentTodayResult.count || 0
 
-    // Hitung total pemasukan bulan ini
-    const totalIncomeThisMonth = paymentsThisMonth.reduce((sum, p) => sum + (p.amount || 0), 0)
+    // Hitung total pemasukan bulan ini (Semua status: paid & partial)
+    const totalIncomeThisMonth = paymentsThisMonth.reduce((sum, p: any) => sum + (p.amount || 0), 0)
+
+    // Hitung yang sudah bayar (Unique Santri IDs)
+    const paidSantriIds = new Set(paymentsThisMonth.map((p: any) => p.santri_id))
+    const paidCount = paidSantriIds.size
+    const unpaidCount = activeSantri - paidCount
 
     // Format tanggal Indonesia
     const formatDate = (dateStr: string) => {
@@ -106,10 +93,11 @@ export default async function DashboardPage() {
 
     // Permission type labels
     const typeLabels: Record<string, string> = {
+        pulang: 'Pulang',
+        kegiatan_luar: 'Keluar',
+        organisasi: 'Orgn',
         sick: 'Sakit',
-        permit: 'Izin',
-        late: 'Telat',
-        other: 'Lainnya'
+        permit: 'Izin'
     }
 
     return (
@@ -128,9 +116,9 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
-            {/* Stats Cards Row 1 */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-l-4 border-l-blue-500">
+            {/* Stats Cards Row 1 - Now with Contextual Actions */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                <Card className="border-l-4 border-l-blue-500 relative overflow-hidden group">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Santri</CardTitle>
                         <Users className="h-4 w-4 text-blue-500" />
@@ -141,10 +129,13 @@ export default async function DashboardPage() {
                             {totalSantri - activeSantri > 0 && `+${totalSantri - activeSantri} tidak aktif`}
                             {totalSantri - activeSantri === 0 && 'Semua santri aktif'}
                         </p>
+                        <Button variant="ghost" size="sm" className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 text-xs" asChild>
+                            <Link href="/santri">Kelola <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                        </Button>
                     </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-green-500">
+                <Card className="border-l-4 border-l-green-500 relative overflow-hidden group">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Pemasukan Bulan Ini</CardTitle>
                         <DollarSign className="h-4 w-4 text-green-500" />
@@ -154,23 +145,43 @@ export default async function DashboardPage() {
                         <p className="text-xs text-muted-foreground">
                             {paymentsThisMonth.length} pembayaran
                         </p>
+                        <Button variant="ghost" size="sm" className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 text-xs" asChild>
+                            <Link href="/payments">Input Bayar <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                        </Button>
                     </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-yellow-500">
+                <Card className="border-l-4 border-l-red-500 relative overflow-hidden group">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Menunggu Approval</CardTitle>
-                        <Clock className="h-4 w-4 text-yellow-500" />
+                        <CardTitle className="text-sm font-medium">Belum Bayar</CardTitle>
+                        <AlertCircle className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{pendingPermissions}</div>
+                        <div className="text-2xl font-bold text-red-600">{unpaidCount}</div>
                         <p className="text-xs text-muted-foreground">
-                            Perizinan pending
+                            Bulan {monthNames[currentMonth]} {currentYear}
                         </p>
+
                     </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-purple-500">
+                <Card className="border-l-4 border-l-orange-500 relative overflow-hidden group">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Nilai Input</CardTitle>
+                        <GraduationCap className="h-4 w-4 text-orange-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalGrades}</div>
+                        <p className="text-xs text-muted-foreground">
+                            Total rekaman nilai
+                        </p>
+                        <Button variant="ghost" size="sm" className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 text-xs" asChild>
+                            <Link href="/grades/batch">Input Nilai <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-l-4 border-l-purple-500 relative overflow-hidden group">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Hadir Hari Ini</CardTitle>
                         <ListChecks className="h-4 w-4 text-purple-500" />
@@ -180,199 +191,105 @@ export default async function DashboardPage() {
                         <p className="text-xs text-muted-foreground">
                             Santri hadir
                         </p>
+                        <Button variant="ghost" size="sm" className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 text-xs" asChild>
+                            <Link href="/attendance">Absensi <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                        </Button>
                     </CardContent>
                 </Card>
-            </div>
-
-            {/* Alert Cards */}
-            <div className="grid gap-4 md:grid-cols-2">
-                {/* Belum Bayar */}
-                {unpaidCount > 0 && (
-                    <Card className="bg-red-50 border-red-200">
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center gap-2">
-                                <AlertCircle className="h-5 w-5 text-red-500" />
-                                <CardTitle className="text-base text-red-700">Belum Bayar Bulan Ini</CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-2xl font-bold text-red-600">{unpaidCount} santri</p>
-                            <p className="text-sm text-red-600/70">Belum bayar syahriah {monthNames[currentMonth]} {currentYear}</p>
-                            <Button variant="outline" size="sm" className="mt-3 border-red-300 text-red-600 hover:bg-red-100" asChild>
-                                <Link href={`/payments?tab=recap&month=${currentMonth}&year=${currentYear}`}>
-                                    Lihat Detail <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Santri Sedang Izin */}
-                {activePermissions.length > 0 && (
-                    <Card className="bg-blue-50 border-blue-200">
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center gap-2">
-                                <Calendar className="h-5 w-5 text-blue-500" />
-                                <CardTitle className="text-base text-blue-700">Santri Sedang Izin Hari Ini</CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-2">
-                                {activePermissions.slice(0, 3).map((p: any) => (
-                                    <div key={p.id} className="flex items-center justify-between text-sm">
-                                        <span className="font-medium text-blue-800">{p.santri?.name}</span>
-                                        <Badge variant="outline" className="text-blue-600 border-blue-300">
-                                            {typeLabels[p.type] || p.type}
-                                        </Badge>
-                                    </div>
-                                ))}
-                                {activePermissions.length > 3 && (
-                                    <p className="text-xs text-blue-600">+{activePermissions.length - 3} lainnya</p>
-                                )}
-                            </div>
-                            <Button variant="outline" size="sm" className="mt-3 border-blue-300 text-blue-600 hover:bg-blue-100" asChild>
-                                <Link href="/permissions?tab=approved">
-                                    Lihat Semua <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                )}
             </div>
 
             {/* Main Content */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 {/* Pembayaran Terbaru */}
-                <Card className="lg:col-span-4">
+                <Card className="lg:col-span-4 rounded-xl border-none shadow-sm md:shadow-md">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Pembayaran Terbaru</CardTitle>
                             <CardDescription>5 pembayaran terakhir</CardDescription>
                         </div>
-                        <Button variant="ghost" size="sm" asChild>
+                        <Button variant="outline" size="sm" asChild>
                             <Link href="/payments">Lihat Semua</Link>
                         </Button>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {recentPayments.map((payment: any) => (
-                                <div className="flex items-center" key={payment.id}>
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100">
-                                        <CheckCircle className="h-4 w-4 text-green-600" />
-                                    </div>
-                                    <div className="ml-4 space-y-1 flex-1">
-                                        <p className="text-sm font-medium leading-none">
-                                            {payment.santri?.name}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {monthNames[payment.month]} {payment.year} • {formatDate(payment.payment_date)}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant={payment.status === 'paid' ? 'default' : 'secondary'} className={payment.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                                            {payment.status === 'paid' ? 'Lunas' : 'Sebagian'}
-                                        </Badge>
-                                        <span className="font-medium text-green-600">
-                                            +Rp {payment.amount?.toLocaleString('id-ID')}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                            {!recentPayments.length && (
-                                <p className="text-sm text-muted-foreground text-center py-8">Belum ada pembayaran</p>
+                            {recentPayments.length > 0 ? (
+                                recentPayments.map((payment: any) => (
+                                    <Link href={`/santri/${payment.santri?.id}`} className="flex items-center group hover:bg-slate-50 p-2 rounded-lg transition-colors" key={payment.id}>
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100 group-hover:bg-green-200 transition-colors">
+                                            <CheckCircle className="h-4 w-4 text-green-600" />
+                                        </div>
+                                        <div className="ml-4 space-y-1 flex-1">
+                                            <p className="text-sm font-medium leading-none group-hover:text-primary transition-colors">
+                                                {payment.santri?.name}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {monthNames[payment.month]} {payment.year} • {formatDate(payment.payment_date)}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={payment.status === 'paid' ? 'default' : 'secondary'} className={payment.status === 'paid' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-yellow-100 text-yellow-700'}>
+                                                {payment.status === 'paid' ? 'Lunas' : 'Sebagian'}
+                                            </Badge>
+                                            <span className="font-medium text-green-600 text-sm">
+                                                +Rp {payment.amount?.toLocaleString('id-ID')}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ))
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-12 bg-slate-50 rounded-lg border border-dashed">Belum ada pembayaran</p>
                             )}
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Perizinan Pending */}
-                <Card className="lg:col-span-3">
+                {/* Perizinan Pending / Santri Sedang Izin */}
+                <Card className="lg:col-span-3 rounded-xl border-none shadow-sm md:shadow-md">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Perizinan Menunggu</CardTitle>
-                            <CardDescription>Perlu approval</CardDescription>
+                            <CardTitle>Santri Sedang Izin</CardTitle>
+                            <CardDescription>Berlangsung hari ini</CardDescription>
                         </div>
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link href="/permissions?tab=pending">Lihat Semua</Link>
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href="/permissions?tab=approved">Lihat Semua</Link>
                         </Button>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {pendingPermissionsList.map((perm: any) => (
-                                <div className="flex items-start gap-3" key={perm.id}>
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-100 shrink-0">
-                                        <Clock className="h-4 w-4 text-yellow-600" />
+                            {activePermissions.length > 0 ? (
+                                activePermissions.map((perm: any) => (
+                                    <div className="flex items-start gap-4 p-2 rounded-lg hover:bg-slate-50 transition-colors" key={perm.id}>
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 shrink-0">
+                                            <Clock className="h-5 w-5 text-blue-600" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <Link href={`/santri/${perm.santri?.id}`} className="block">
+                                                <p className="text-sm font-medium truncate hover:text-primary hover:underline decoration-blue-500 underline-offset-4 cursor-pointer">
+                                                    {perm.santri?.name}
+                                                </p>
+                                            </Link>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
+                                                    {typeLabels[perm.type] || perm.type}
+                                                </Badge>
+                                                <span className="text-xs text-muted-foreground">
+                                                    Sampai: {formatDate(perm.end_date)}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">
-                                            {perm.santri?.name}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {typeLabels[perm.type] || perm.type} • {formatDate(perm.start_date)} - {formatDate(perm.end_date)}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground truncate mt-1">
-                                            {perm.reason}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                            {!pendingPermissionsList.length && (
-                                <div className="text-center py-8">
-                                    <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                                    <p className="text-sm text-muted-foreground">Tidak ada perizinan pending</p>
+                                ))
+                            ) : (
+                                <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed">
+                                    <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm text-muted-foreground">Semua santri ada di pondok</p>
                                 </div>
                             )}
                         </div>
                     </CardContent>
                 </Card>
             </div>
-
-            {/* Quick Actions */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base">Aksi Cepat</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-wrap gap-3">
-                        <Button variant="outline" asChild>
-                            <Link href="/santri">
-                                <Users className="mr-2 h-4 w-4" />
-                                Kelola Santri
-                            </Link>
-                        </Button>
-                        <Button variant="outline" asChild>
-                            <Link href="/payments">
-                                <Wallet className="mr-2 h-4 w-4" />
-                                Input Pembayaran
-                            </Link>
-                        </Button>
-                        <Button variant="outline" asChild>
-                            <Link href="/payments/bulk">
-                                <ListChecks className="mr-2 h-4 w-4" />
-                                Generate Tagihan
-                            </Link>
-                        </Button>
-                        <Button variant="outline" asChild>
-                            <Link href="/permissions?tab=pending">
-                                <Clock className="mr-2 h-4 w-4" />
-                                Approve Perizinan
-                            </Link>
-                        </Button>
-                        <Button variant="outline" asChild>
-                            <Link href="/grades/batch">
-                                <GraduationCap className="mr-2 h-4 w-4" />
-                                Input Nilai Batch
-                            </Link>
-                        </Button>
-                        <Button variant="outline" asChild>
-                            <Link href="/attendance">
-                                <ListChecks className="mr-2 h-4 w-4" />
-                                Absensi Harian
-                            </Link>
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     )
 }

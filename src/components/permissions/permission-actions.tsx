@@ -1,145 +1,112 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { updatePermissionStatus } from '@/app/(dashboard)/permissions/actions'
 import { Button } from '@/components/ui/button'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Check, X, CheckCircle, XCircle } from 'lucide-react'
+import { Printer, MoreHorizontal, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+// import { PDFDownloadLink } from '@react-pdf/renderer' // Removed for performance
+import { PermissionDocument } from './permission-pdf'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-export function PermissionActions({ id, status }: { id: string; status: string }) {
-    const [showApproveDialog, setShowApproveDialog] = useState(false)
-    const [showRejectDialog, setShowRejectDialog] = useState(false)
+export function PermissionActions({ id, status, data }: { id: string; status: string; data?: any }) {
     const [isLoading, setIsLoading] = useState(false)
+    const [isClient, setIsClient] = useState(false)
 
-    if (status !== 'pending') {
-        // Show status badge for non-pending items
-        if (status === 'approved') {
-            return (
-                <div className="flex items-center gap-1 text-green-600 text-sm">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Disetujui</span>
-                </div>
-            )
-        }
-        if (status === 'rejected') {
-            return (
-                <div className="flex items-center gap-1 text-red-600 text-sm">
-                    <XCircle className="h-4 w-4" />
-                    <span>Ditolak</span>
-                </div>
-            )
-        }
-        return null
-    }
+    useEffect(() => {
+        setIsClient(true)
+    }, [])
 
-    const handleApprove = async () => {
+    const handleStatusUpdate = async (newStatus: 'berlangsung' | 'selesai' | 'terlambat') => {
         setIsLoading(true)
         try {
-            await updatePermissionStatus(id, 'approved')
-            toast.success('Perizinan disetujui')
-        } catch (error) {
-            toast.error("Gagal menyetujui perizinan")
+            await updatePermissionStatus(id, newStatus)
+            toast.success(`Status diperbarui menjadi ${newStatus}`)
+        } catch (error: any) {
+            console.error('[PermissionActions] Error:', error)
+            toast.error(`Gagal memperbarui status: ${error?.message || 'Unknown error'}`)
         } finally {
             setIsLoading(false)
-            setShowApproveDialog(false)
-        }
-    }
-
-    const handleReject = async () => {
-        setIsLoading(true)
-        try {
-            await updatePermissionStatus(id, 'rejected')
-            toast.success('Perizinan ditolak')
-        } catch (error) {
-            toast.error("Gagal menolak perizinan")
-        } finally {
-            setIsLoading(false)
-            setShowRejectDialog(false)
         }
     }
 
     return (
-        <>
-            <div className="flex items-center gap-1 justify-end">
+        <div className="flex items-center gap-2 justify-end">
+            {isClient && data ? (
                 <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 text-green-600 border-green-200 hover:text-green-700 hover:bg-green-50 hover:border-green-300"
-                    onClick={() => setShowApproveDialog(true)}
+                    className="h-8 gap-1"
+                    disabled={isLoading}
+                    onClick={async () => {
+                        setIsLoading(true);
+                        try {
+                            // Dynamically import pdf to avoid server-side issues and reduce initial bundle status
+                            const { pdf } = await import('@react-pdf/renderer');
+                            const blob = await pdf(<PermissionDocument data={data} />).toBlob();
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `surat_izin_${data.santri?.name || 'santri'}_${new Date().getTime()}.pdf`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                        } catch (error) {
+                            console.error('PDF Generation Error:', error);
+                            toast.error('Gagal membuat PDF');
+                        } finally {
+                            setIsLoading(false);
+                        }
+                    }}
                 >
-                    <Check className="h-4 w-4 mr-1" />
-                    Setuju
+                    <Printer className="h-4 w-4" />
+                    <span className="sr-only sm:not-sr-only">{isLoading ? 'Loading...' : 'Print'}</span>
                 </Button>
+            ) : null}
+
+            {!data && (
                 <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 hover:border-red-300"
-                    onClick={() => setShowRejectDialog(true)}
+                    className="h-8 gap-1"
+                    onClick={() => toast.error("Data perizinan tidak lengkap")}
                 >
-                    <X className="h-4 w-4 mr-1" />
-                    Tolak
+                    <Printer className="h-4 w-4" />
+                    <span className="sr-only sm:not-sr-only">Print</span>
                 </Button>
-            </div>
+            )}
 
-            {/* Approve Dialog */}
-            <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2">
-                            <CheckCircle className="h-5 w-5 text-green-600" />
-                            Setujui Perizinan?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Anda akan menyetujui perizinan ini. Santri akan dicatat sebagai izin yang sah.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isLoading}>Batal</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleApprove}
-                            disabled={isLoading}
-                            className="bg-green-600 hover:bg-green-700"
-                        >
-                            {isLoading ? 'Memproses...' : 'Ya, Setujui'}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Reject Dialog */}
-            <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2">
-                            <XCircle className="h-5 w-5 text-red-600" />
-                            Tolak Perizinan?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Anda akan menolak perizinan ini. Santri akan dianggap tidak hadir tanpa izin yang sah.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isLoading}>Batal</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleReject}
-                            disabled={isLoading}
-                            className="bg-red-600 hover:bg-red-700"
-                        >
-                            {isLoading ? 'Memproses...' : 'Ya, Tolak'}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Ubah Status</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleStatusUpdate('berlangsung')}>
+                        <Clock className="mr-2 h-4 w-4 text-blue-500" />
+                        <span>Berlangsung</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusUpdate('selesai')}>
+                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                        <span>Selesai</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusUpdate('terlambat')}>
+                        <AlertTriangle className="mr-2 h-4 w-4 text-red-500" />
+                        <span>Terlambat</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
     )
 }

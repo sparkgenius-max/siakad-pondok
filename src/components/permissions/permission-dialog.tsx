@@ -87,9 +87,9 @@ export function PermissionDialog({ santriList }: { santriList: SantriOption[] })
                 </DialogHeader>
                 <form action={handleSubmit} className="grid gap-4 py-4">
 
-                    <div className="grid grid-cols-4 items-center gap-4">
+                    <div className="grid grid-cols-[120px_1fr] items-center gap-4">
                         <Label className="text-right">Santri</Label>
-                        <div className="col-span-3">
+                        <div className="w-full">
                             <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
                                 <PopoverTrigger asChild>
                                     <Button
@@ -100,15 +100,15 @@ export function PermissionDialog({ santriList }: { santriList: SantriOption[] })
                                     >
                                         {selectedSantriId
                                             ? selectedSantriName
-                                            : "Select santri..."}
+                                            : "Pilih santri..."}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-full p-0">
                                     <Command>
-                                        <CommandInput placeholder="Search santri..." />
+                                        <CommandInput placeholder="Cari santri..." />
                                         <CommandList>
-                                            <CommandEmpty>No santri found.</CommandEmpty>
+                                            <CommandEmpty>Santri tidak ditemukan.</CommandEmpty>
                                             <CommandGroup>
                                                 {santriList?.map((santri) => (
                                                     <CommandItem
@@ -136,34 +136,47 @@ export function PermissionDialog({ santriList }: { santriList: SantriOption[] })
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="type" className="text-right">Type</Label>
+                    <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                        <Label htmlFor="type" className="text-right">Jenis Izin</Label>
                         <Select name="type" required>
-                            <SelectTrigger className="col-span-3">
-                                <SelectValue placeholder="Select Type" />
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih Jenis Izin" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="sick">Sakit (Sick)</SelectItem>
-                                <SelectItem value="permit">Izin (Permit)</SelectItem>
-                                <SelectItem value="late">Terlambat (Late)</SelectItem>
-                                <SelectItem value="other">Lainnya (Other)</SelectItem>
+                                <SelectItem value="pulang">Izin Pulang</SelectItem>
+                                <SelectItem value="kegiatan_luar">Kegiatan Di Luar</SelectItem>
+                                <SelectItem value="organisasi">Kegiatan Organisasi</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="start_date" className="text-right">Start Date</Label>
-                        <Input id="start_date" name="start_date" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="col-span-3" required />
+                    <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                        <Label htmlFor="status" className="text-right">Status</Label>
+                        <Select name="status" defaultValue="berlangsung">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="berlangsung">Berlangsung</SelectItem>
+                                <SelectItem value="selesai">Selesai</SelectItem>
+                                <SelectItem value="terlambat">Terlambat</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="end_date" className="text-right">End Date</Label>
-                        <Input id="end_date" name="end_date" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="col-span-3" required />
+                    <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                        <Label htmlFor="start_date" className="text-right">Tanggal Mulai</Label>
+                        <Input id="start_date" name="start_date" type="date" defaultValue={new Date().toISOString().split('T')[0]} required />
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="reason" className="text-right">Reason</Label>
-                        <Textarea id="reason" name="reason" className="col-span-3" placeholder="Reason for permission..." required />
+                    <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                        <Label htmlFor="end_date" className="text-right">Tanggal Selesai</Label>
+                        <Input id="end_date" name="end_date" type="date" defaultValue={new Date().toISOString().split('T')[0]} required />
+                    </div>
+
+                    <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                        <Label htmlFor="reason" className="text-right">Keterangan</Label>
+                        <Textarea id="reason" name="reason" placeholder="Keterangan izin..." required />
                     </div>
 
                     <DialogFooter>

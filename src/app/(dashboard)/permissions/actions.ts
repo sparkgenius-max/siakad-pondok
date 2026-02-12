@@ -1,11 +1,18 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 export async function createPermission(prevState: any, formData: FormData) {
     const supabase = await createClient()
-    const user = (await supabase.auth.getUser()).data.user
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    const adminDb = createAdminClient()
 
     const santri_id = formData.get('santri_id') as string
     const data = {
@@ -14,11 +21,11 @@ export async function createPermission(prevState: any, formData: FormData) {
         start_date: formData.get('start_date') as string,
         end_date: formData.get('end_date') as string,
         reason: formData.get('reason') as string,
-        status: 'pending',
-        created_by: user?.id,
+        status: (formData.get('status') as string) || 'berlangsung',
+        created_by: user.id,
     }
 
-    const { error } = await supabase.from('permissions').insert(data)
+    const { error } = await adminDb.from('permissions').insert(data)
 
     if (error) {
         return { error: error.message }
@@ -26,14 +33,15 @@ export async function createPermission(prevState: any, formData: FormData) {
 
     revalidatePath('/permissions')
     revalidatePath(`/permissions/santri/${santri_id}`)
-    revalidatePath('/') // Dashboard might show pending count
+    revalidatePath('/')
     return { message: 'Perizinan berhasil diajukan' }
 }
 
 export async function updatePermission(prevState: any, formData: FormData) {
-    const supabase = await createClient()
     const id = formData.get('id') as string
     const santri_id = formData.get('santri_id') as string
+
+    const adminDb = createAdminClient()
 
     const data = {
         type: formData.get('type') as string,
@@ -42,7 +50,7 @@ export async function updatePermission(prevState: any, formData: FormData) {
         reason: formData.get('reason') as string,
     }
 
-    const { error } = await supabase.from('permissions').update(data).eq('id', id)
+    const { error } = await adminDb.from('permissions').update(data).eq('id', id)
 
     if (error) {
         return { error: error.message }
@@ -53,33 +61,36 @@ export async function updatePermission(prevState: any, formData: FormData) {
     return { message: 'Perizinan berhasil diperbarui' }
 }
 
-export async function updatePermissionStatus(id: string, status: 'approved' | 'rejected', santriId?: string) {
+export async function updatePermissionStatus(id: string, status: 'approved' | 'rejected' | 'berlangsung' | 'selesai' | 'terlambat', santriId?: string) {
     const supabase = await createClient()
     const user = (await supabase.auth.getUser()).data.user
 
-    const { error } = await supabase
+    const adminDb = createAdminClient()
+
+    const { error } = await adminDb
         .from('permissions')
         .update({
             status,
             approved_by: user?.id,
-            approved_at: new Date().toISOString()
+            approval_date: new Date().toISOString()
         })
         .eq('id', id)
 
     if (error) {
+        console.error('[updatePermissionStatus] Error:', error)
         throw new Error(error.message)
     }
 
     revalidatePath('/permissions')
-    revalidatePath('/') // Dashboard shows pending count
+    revalidatePath('/')
     if (santriId) {
         revalidatePath(`/permissions/santri/${santriId}`)
     }
 }
 
 export async function deletePermission(id: string, santriId?: string) {
-    const supabase = await createClient()
-    const { error } = await supabase.from('permissions').delete().eq('id', id)
+    const adminDb = createAdminClient()
+    const { error } = await adminDb.from('permissions').delete().eq('id', id)
 
     if (error) {
         throw new Error(error.message)

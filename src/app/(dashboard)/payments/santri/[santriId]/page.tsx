@@ -55,7 +55,7 @@ export default async function SantriPaymentHistoryPage({
     const partialMonths = thisYearPayments.filter(p => p.status === 'partial').length
 
     // Get santri list for the dialog (just this one for quick add)
-    const santriList = [{ id: santri.id, name: santri.name, nis: santri.nis }]
+    const santriList = [{ id: santri.id, name: santri.name, nis: santri.nis, class: santri.class }]
 
     // Generate payment matrix (last 2 years)
     const years = [currentYear, currentYear - 1]
@@ -153,9 +153,9 @@ export default async function SantriPaymentHistoryPage({
                                     <div
                                         key={month}
                                         className={`rounded-lg p-3 text-center border-2 transition-colors ${isPaid ? 'bg-green-100 border-green-300' :
-                                                isPartial ? 'bg-yellow-100 border-yellow-300' :
-                                                    isPending ? 'bg-orange-100 border-orange-300' :
-                                                        'bg-gray-50 border-gray-200'
+                                            isPartial ? 'bg-yellow-100 border-yellow-300' :
+                                                isPending ? 'bg-orange-100 border-orange-300' :
+                                                    'bg-gray-50 border-gray-200'
                                             }`}
                                     >
                                         <div className="text-xs font-medium text-muted-foreground mb-1">

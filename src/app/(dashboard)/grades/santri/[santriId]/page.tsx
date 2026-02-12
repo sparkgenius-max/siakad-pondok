@@ -44,7 +44,7 @@ export default async function SantriGradesPage({
         .order('subject', { ascending: true })
 
     // Get santri list for dialog (just this one)
-    const santriList = [{ id: santri.id, name: santri.name, nis: santri.nis }]
+    const santriList = [{ id: santri.id, name: santri.name, nis: santri.nis, class: santri.class }]
 
     // Group grades by semester
     const gradesBySemester: Record<string, any[]> = {}

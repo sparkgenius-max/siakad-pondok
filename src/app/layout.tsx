@@ -14,9 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SIAKAD Pondok Pesantren",
-  description: "Sistem Informasi Akademik Pondok Pesantren",
+  title: "SIPPIA PONPES IDAMAN",
+  description: "Sistem Informasi Akademik Pondok Pesantren Imam Ad-Damanhuri",
 };
+
+import NextTopLoader from 'nextjs-toploader';
+
+// ... imports
 
 export default function RootLayout({
   children,
@@ -28,6 +32,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <NextTopLoader color="#10b981" showSpinner={false} />
         {children}
         <Toaster />
       </body>

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { SantriDialog } from '@/components/santri/santri-dialog'
 import { SantriActions } from '@/components/santri/santri-actions'
 import {
@@ -16,18 +16,21 @@ import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { PaginationLimit } from '@/components/layout/pagination-limit'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SantriPage({
     searchParams,
 }: {
     searchParams: Promise<{ page?: string; q?: string; limit?: string }>
 }) {
     const params = await searchParams
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const page = Number(params.page) || 1
     const limit = Number(params.limit) || 10
     const from = (page - 1) * limit
     const to = from + limit - 1
 
+    // Fetch santri
     let query = supabase
         .from('santri')
         .select('*', { count: 'exact' })
@@ -35,10 +38,11 @@ export default async function SantriPage({
         .range(from, to)
 
     if (params.q) {
-        query = query.ilike('name', `%${params.q}%`)
+        query = query.or(`name.ilike.%${params.q}%,nis.ilike.%${params.q}%`)
     }
 
     const { data: santri, count } = await query
+
     const totalPages = count ? Math.ceil(count / limit) : 0
 
     // Build URL helper for pagination
@@ -57,7 +61,7 @@ export default async function SantriPage({
                 <SantriDialog />
             </div>
 
-            {/* Search and Action */}
+            {/* Search */}
             <div className="flex flex-col gap-4 mt-2">
                 <form className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -80,20 +84,24 @@ export default async function SantriPage({
                 <div className="grid grid-cols-1 gap-3 md:hidden">
                     {santri?.length ? (
                         santri.map((s) => (
-                            <div key={s.id} className="bg-white p-4 rounded-xl border shadow-sm flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <h4 className="font-bold text-slate-900">{s.name}</h4>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{s.nis}</span>
-                                        <span>•</span>
-                                        <span>Kelas {s.class}</span>
+                            <div key={s.id} className="bg-white p-4 rounded-xl border shadow-sm">
+                                <div className="flex items-start justify-between mb-2">
+                                    <Link href={`/santri/${s.id}`} className="hover:underline">
+                                        <h4 className="font-bold text-slate-900">{s.name}</h4>
+                                    </Link>
+                                    <div className="flex items-center gap-2">
+                                        <Badge className={s.status === 'active' ? 'bg-green-100 text-green-700 border-none' : 'bg-red-100 text-red-700 border-none'}>
+                                            {s.status === 'active' ? 'Aktif' : 'Nonaktif'}
+                                        </Badge>
+                                        <SantriActions santri={s} />
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-2">
-                                    <Badge className={s.status === 'active' ? 'bg-green-100 text-green-700 border-none' : 'bg-red-100 text-red-700 border-none'}>
-                                        {s.status === 'active' ? 'Aktif' : 'Nonaktif'}
-                                    </Badge>
-                                    <SantriActions santri={s} />
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                                    <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{s.nis}</span>
+                                    <span>•</span>
+                                    <span>Kelas {s.class}</span>
+                                    <span>•</span>
+                                    <span className="font-medium text-slate-600">{s.program}</span>
                                 </div>
                             </div>
                         ))
@@ -111,7 +119,11 @@ export default async function SantriPage({
                             <TableRow>
                                 <TableHead className="w-[100px]">NIS</TableHead>
                                 <TableHead>Nama</TableHead>
+                                <TableHead>JK</TableHead>
+                                <TableHead>Asrama</TableHead>
                                 <TableHead>Kelas</TableHead>
+                                <TableHead>Program</TableHead>
+                                <TableHead>Wali</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Aksi</TableHead>
                             </TableRow>
@@ -120,8 +132,20 @@ export default async function SantriPage({
                             {santri?.map((s) => (
                                 <TableRow key={s.id}>
                                     <TableCell className="font-mono text-xs">{s.nis}</TableCell>
-                                    <TableCell className="font-semibold">{s.name}</TableCell>
+                                    <TableCell>
+                                        <Link href={`/santri/${s.id}`} className="font-semibold text-primary hover:underline">
+                                            {s.name}
+                                        </Link>
+                                    </TableCell>
+                                    <TableCell>{s.gender}</TableCell>
+                                    <TableCell>{s.dorm || '-'}</TableCell>
                                     <TableCell>{s.class}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 whitespace-nowrap bg-slate-50">
+                                            {s.program || '-'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{s.guardian_name || '-'}</TableCell>
                                     <TableCell>
                                         <Badge className={s.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
                                             {s.status === 'active' ? 'Aktif' : 'Nonaktif'}

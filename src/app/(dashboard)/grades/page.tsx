@@ -1,6 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { GradeDialog } from '@/components/grades/grade-dialog'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { TahfidzGradeDialog } from '@/components/grades/tahfidz-grade-dialog'
+import { BulkGradeForm } from '@/components/grades/bulk-grade-form'
+import { GradesFilter } from '@/components/grades/grades-filter'
+import { BulkInputFilter } from '@/components/grades/bulk-input-filter'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -24,22 +29,28 @@ import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Search, GraduationCap, BookOpen, Users, TrendingUp } from 'lucide-react'
 import { PaginationLimit } from '@/components/layout/pagination-limit'
 
-const SEMESTERS = [
-    { value: 'Ganjil', label: 'Ganjil (Semester 1)' },
-    { value: 'Genap', label: 'Genap (Semester 2)' },
-]
+import { ACADEMIC_YEARS, SEMESTERS, DINIYAH_SUBJECTS, TAHFIDZ_SUBJECTS } from '@/lib/constants'
 
-const SUBJECTS = [
-    'Al-Quran', 'Tajwid', 'Tafsir', 'Hadits', 'Fiqih', 'Ushul Fiqih',
-    'Aqidah', 'Akhlaq', 'Nahwu', 'Shorof', 'Balaghah', 'Muthalaah',
-    'Imla', 'Insya', 'Mahfudzat', 'Tarikh Islam', 'Bahasa Arab',
-    'Bahasa Indonesia', 'Bahasa Inggris', 'Matematika', 'IPA', 'IPS'
-]
+export const dynamic = 'force-dynamic'
 
 export default async function GradesPage({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string; q?: string; tab?: string; class?: string; semester?: string; year?: string; limit?: string }>
+    searchParams: Promise<{
+        page?: string;
+        q?: string;
+        tab?: string;
+        class?: string;
+        semester?: string;
+        year?: string;
+        limit?: string;
+        program?: string;
+        subject?: string;
+        batch_class?: string;
+        batch_subject?: string;
+        batch_year?: string;
+        batch_semester?: string;
+    }>
 }) {
     const params = await searchParams
     const supabase = await createClient()
@@ -47,28 +58,59 @@ export default async function GradesPage({
     const limit = Number(params.limit) || 20
     const from = (page - 1) * limit
     const to = from + limit - 1
-    const activeTab = params.tab || 'all'
+
+    // Main Tab: Diniyah vs Tahfidz
+    const activeProgram = params.program === 'Tahfidz' ? 'Tahfidz' : 'Diniyah'
+    const activeViewTab = params.tab || 'all' // all or class
 
     const currentYear = new Date().getFullYear()
-    const selectedYear = params.year || `${currentYear}/${currentYear + 1}`
+
+    // Main Filter Params
+    const selectedYear = params.year || 'all'
     const selectedSemester = params.semester || 'Ganjil'
     const selectedClass = params.class || ''
 
-    const { data: santriList } = await supabase
+    // Batch Filter Params
+    const batchClass = params.batch_class || ''
+    const batchSubject = params.batch_subject || ''
+    const batchYear = params.batch_year || 'all'
+    const batchSemester = params.batch_semester || 'Ganjil'
+
+    // Fetch correct Santri based on Active Program
+    // Use Admin Client to bypass RLS for critical dropdown data
+    const adminDb = createAdminClient()
+    const { data: santriList } = await adminDb
         .from('santri')
-        .select('id, name, nis')
+        .select('id, name, nis, class')
         .eq('status', 'active')
+        .eq('program', activeProgram)
         .order('name')
 
-    const { data: classesData } = await supabase
+    const { data: classesData } = await adminDb
         .from('santri')
         .select('class')
         .eq('status', 'active')
-    const uniqueClasses = [...new Set(classesData?.map(s => s.class).filter(Boolean))].sort()
+        .eq('program', activeProgram)
+    // Get Unique Classes and Sort them (Ula -> Wustha -> Ulya)
+    const diniyahOrder = ['Ula', 'Wustha', 'Ulya']
+    const uniqueClasses = [...new Set(classesData?.map(s => s.class).filter(Boolean))].sort((a, b) => {
+        const indexA = diniyahOrder.indexOf(a)
+        const indexB = diniyahOrder.indexOf(b)
+        // If both are in the known order list, compare indices
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB
+        // If only A is known, it comes first
+        if (indexA !== -1) return -1
+        // If only B is known, it comes first
+        if (indexB !== -1) return 1
+        // Fallback to alphabetical
+        return a.localeCompare(b)
+    })
 
-    let query = supabase
+    // Query Grades based on Active Program using Admin Client
+    let query = adminDb
         .from('grades')
         .select('*, santri(id, name, nis, class)', { count: 'exact' })
+        .eq('program_type', activeProgram)
         .order('created_at', { ascending: false })
         .range(from, to)
 
@@ -76,38 +118,99 @@ export default async function GradesPage({
         query = query.ilike('subject', `%${params.q}%`)
     }
 
+    if (params.subject && params.subject !== 'all') {
+        query = query.eq('subject', params.subject)
+    }
+
+    if (params.class && params.class !== 'all') {
+        // Filter by class requires joining with santri, but supabase simple query can't do deep filter easily on join without !inner
+        // We need to use !inner hint on santri join if we want to filter by santri's class
+        // Changing the select to use inner join for filtering
+        query = adminDb
+            .from('grades')
+            .select('*, santri!inner(id, name, nis, class)', { count: 'exact' })
+            .eq('program_type', activeProgram)
+            .eq('santri.class', params.class)
+            .range(from, to)
+            .order('created_at', { ascending: false })
+
+        // Re-apply other filters since we reset query
+        if (params.q) query = query.ilike('subject', `%${params.q}%`)
+        if (params.subject && params.subject !== 'all') query = query.eq('subject', params.subject)
+    }
+
+    if (params.year && params.year !== 'all') {
+        query = query.eq('academic_year', params.year)
+    }
+
+    if (params.semester) {
+        query = query.eq('semester', params.semester)
+    }
+
     const { data: grades, count } = await query
     const totalPages = count ? Math.ceil(count / limit) : 0
 
+    // Class View Data (or "Input Mode" for Tahfidz)
     let classSantri: any[] = []
     let classGrades: any[] = []
-    if (selectedClass) {
-        const { data: santriData } = await supabase
+
+    // For Tahfidz, we show ALL students in the "Input" tab (since no classes)
+    // For Diniyah, we only show if a class is selected
+    // NOW USING BATCH PARAMS
+    const shouldFetchInputData = (activeProgram === 'Tahfidz') || (activeProgram === 'Diniyah' && batchClass)
+
+    if (shouldFetchInputData) {
+        let santriQuery = adminDb
             .from('santri')
             .select('id, name, nis, class')
-            .eq('class', selectedClass)
             .eq('status', 'active')
+            .eq('program', activeProgram)
             .order('name')
+
+        // Only filter by class for Diniyah
+        if (activeProgram === 'Diniyah' && batchClass) {
+            santriQuery = santriQuery.eq('class', batchClass)
+        }
+
+        const { data: santriData } = await santriQuery
         classSantri = santriData || []
 
         const santriIds = classSantri.map(s => s.id)
         if (santriIds.length > 0) {
-            const { data: gradesData } = await supabase
+            let gradesQuery = adminDb
                 .from('grades')
                 .select('*')
                 .in('santri_id', santriIds)
-                .eq('academic_year', selectedYear)
-                .eq('semester', selectedSemester)
+                .eq('semester', batchSemester)
+                .eq('program_type', activeProgram)
+
+            if (batchYear !== 'all') {
+                gradesQuery = gradesQuery.eq('academic_year', batchYear)
+            }
+
+            // Filter by subject if selected (for Bulk Input)
+            if (batchSubject) {
+                gradesQuery = gradesQuery.eq('subject', batchSubject)
+            }
+
+            const { data: gradesData } = await gradesQuery
             classGrades = gradesData || []
         }
     }
 
-    const { count: totalGrades } = await supabase
+    const { count: totalGrades } = await adminDb
         .from('grades')
         .select('*', { count: 'exact', head: true })
+        .eq('program_type', activeProgram)
 
     const buildUrl = (newParams: Record<string, string | number>) => {
         const urlParams = new URLSearchParams()
+        // Default program param if not present
+        if (!params.program) urlParams.set('program', 'Diniyah')
+
+        // Preserve current batch params if switching pagination within separate context?
+        // Actually pagination is global for now, but mainly affects "All Grades".
+        // Let's just merge params.
         const merged = { ...params, ...newParams }
         Object.entries(merged).forEach(([k, v]) => {
             if (v !== undefined && v !== null && v !== '') urlParams.set(k, String(v))
@@ -115,8 +218,8 @@ export default async function GradesPage({
         return `/grades?${urlParams.toString()}`
     }
 
-    const getGradeColor = (grade: string) => {
-        const numGrade = parseInt(grade)
+    const getGradeColor = (grade: number | string | undefined | null) => {
+        const numGrade = typeof grade === 'number' ? grade : parseFloat(String(grade))
         if (!isNaN(numGrade)) {
             if (numGrade >= 85) return 'text-green-600 bg-green-50'
             if (numGrade >= 70) return 'text-blue-600 bg-blue-50'
@@ -129,8 +232,37 @@ export default async function GradesPage({
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Nilai Akademik</h2>
-                <GradeDialog santriList={santriList || []} />
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Nilai {activeProgram}</h2>
+                <div className="flex items-center gap-2">
+
+                    {activeProgram === 'Tahfidz' ? (
+                        <TahfidzGradeDialog santriList={santriList || []} />
+                    ) : (
+                        <GradeDialog santriList={santriList || []} />
+                    )}
+                </div>
+            </div>
+
+            {/* PROGRAM TABS */}
+            <div className="flex space-x-2 border-b">
+                <Link
+                    href={buildUrl({ program: 'Diniyah', page: 1, q: '' })}
+                    className={`pb-2 px-4 text-sm font-medium transition-colors hover:text-emerald-600 ${activeProgram === 'Diniyah'
+                        ? 'border-b-2 border-emerald-600 text-emerald-600'
+                        : 'text-muted-foreground'
+                        }`}
+                >
+                    Diniyah
+                </Link>
+                <Link
+                    href={buildUrl({ program: 'Tahfidz', page: 1, q: '' })}
+                    className={`pb-2 px-4 text-sm font-medium transition-colors hover:text-cyan-600 ${activeProgram === 'Tahfidz'
+                        ? 'border-b-2 border-cyan-600 text-cyan-600'
+                        : 'text-muted-foreground'
+                        }`}
+                >
+                    Tahfidz
+                </Link>
             </div>
 
             <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
@@ -167,76 +299,36 @@ export default async function GradesPage({
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-xl md:text-2xl font-bold">{SUBJECTS.length}</div>
+                        <div className="text-xl md:text-2xl font-bold">
+                            {activeProgram === 'Tahfidz' ? TAHFIDZ_SUBJECTS.length : DINIYAH_SUBJECTS.length}
+                        </div>
                     </CardContent>
                 </Card>
             </div>
 
-            <Tabs defaultValue={activeTab} className="space-y-4">
+            <Tabs defaultValue={activeViewTab} className="space-y-4">
                 <TabsList className="grid grid-cols-2 w-full md:w-auto">
                     <TabsTrigger value="all" asChild>
                         <Link href={buildUrl({ tab: 'all', page: 1 })}>Semua Nilai</Link>
                     </TabsTrigger>
                     <TabsTrigger value="class" asChild>
-                        <Link href={buildUrl({ tab: 'class' })}>Input Per Kelas</Link>
+                        <Link href={buildUrl({ tab: 'class' })}>Input Masal</Link>
                     </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="all" className="space-y-4">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                        <form className="flex items-center space-x-2 w-full md:w-auto">
-                            <input type="hidden" name="tab" value="all" />
-                            <div className="relative flex-1 md:w-[300px]">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    name="q"
-                                    type="search"
-                                    placeholder="Cari mata pelajaran..."
-                                    className="pl-8"
-                                    defaultValue={params.q}
-                                />
-                            </div>
-                            <Button type="submit" variant="secondary">Cari</Button>
-                        </form>
-                    </div>
+                    <GradesFilter
+                        programs={['Diniyah', 'Tahfidz']}
+                        classes={uniqueClasses}
+                        subjects={activeProgram === 'Tahfidz' ? TAHFIDZ_SUBJECTS : DINIYAH_SUBJECTS}
+                        years={ACADEMIC_YEARS}
+                        semesters={SEMESTERS}
+                        activeProgram={activeProgram}
+                    />
 
                     <Card className="overflow-hidden border-none md:border md:border-border bg-transparent md:bg-white shadow-none md:shadow-sm">
                         <CardContent className="p-0">
-                            {/* Mobile Card List */}
-                            <div className="grid grid-cols-1 gap-3 md:hidden">
-                                {grades?.length ? (
-                                    grades.map((g: any) => (
-                                        <div key={g.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3">
-                                            <div className="flex justify-between items-start">
-                                                <div className="space-y-1">
-                                                    <h4 className="font-bold text-slate-900">{g.santri?.name}</h4>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] text-muted-foreground font-mono bg-slate-100 px-1 rounded">{g.santri?.nis}</span>
-                                                        <span className="text-[10px] text-muted-foreground">Kelas {g.santri?.class}</span>
-                                                    </div>
-                                                </div>
-                                                <Badge className={`${getGradeColor(String(g.grade))} border-none text-sm font-bold h-8 w-8 flex items-center justify-center rounded-full px-0`}>
-                                                    {g.grade}
-                                                </Badge>
-                                            </div>
-
-                                            <div className="flex justify-between items-end pt-2 border-t border-slate-50">
-                                                <div className="text-xs space-y-1">
-                                                    <p className="font-bold text-slate-800">{g.subject}</p>
-                                                    <p className="text-muted-foreground">Jenis: <span className="text-slate-600">{g.type}</span></p>
-                                                </div>
-                                                <GradeDialog santriList={santriList || []} grade={g} />
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-12 bg-white rounded-xl border">
-                                        <p className="text-muted-foreground">Tidak ada data nilai.</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Desktop Table */}
+                            {/* Desktop Table - Dynamic Columns based on Program */}
                             <div className="hidden md:block">
                                 <Table>
                                     <TableHeader className="bg-slate-50">
@@ -244,8 +336,15 @@ export default async function GradesPage({
                                             <TableHead>Santri</TableHead>
                                             <TableHead>Kelas</TableHead>
                                             <TableHead>Mapel</TableHead>
-                                            <TableHead className="text-right">Nilai</TableHead>
-                                            <TableHead>Jenis</TableHead>
+                                            {activeProgram === 'Diniyah' && (
+                                                <>
+                                                    <TableHead className="text-center">Teori</TableHead>
+                                                    <TableHead className="text-center">Praktek</TableHead>
+                                                </>
+                                            )}
+                                            <TableHead className="text-center">Total</TableHead>
+                                            <TableHead>Semester</TableHead>
+                                            <TableHead>Tahun Ajaran</TableHead>
                                             <TableHead className="text-right">Aksi</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -254,28 +353,39 @@ export default async function GradesPage({
                                             grades.map((g: any) => (
                                                 <TableRow key={g.id}>
                                                     <TableCell>
-                                                        <div className="font-semibold text-slate-900">{g.santri?.name}</div>
+                                                        <Link href={`/santri/${g.santri?.id}`} className="hover:underline cursor-pointer">
+                                                            <div className="font-semibold text-slate-900">{g.santri?.name}</div>
+                                                        </Link>
                                                         <div className="text-[10px] text-muted-foreground font-mono">{g.santri?.nis}</div>
                                                     </TableCell>
                                                     <TableCell className="text-sm">Kelas {g.santri?.class}</TableCell>
                                                     <TableCell className="whitespace-nowrap font-medium text-slate-800">{g.subject}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Badge className={`${getGradeColor(String(g.grade))} border-none font-bold`}>
-                                                            {g.grade}
+                                                    {activeProgram === 'Diniyah' && (
+                                                        <>
+                                                            <TableCell className="text-center text-sm">{g.score_theory || 0}</TableCell>
+                                                            <TableCell className="text-center text-sm">{g.score_practice || 0}</TableCell>
+                                                        </>
+                                                    )}
+                                                    <TableCell className="text-center">
+                                                        <Badge className={`${getGradeColor(g.score_total)} border-none font-bold`}>
+                                                            {g.score_total || 0}
                                                         </Badge>
                                                     </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="outline" className="text-[10px] h-5">{g.type}</Badge>
-                                                    </TableCell>
+                                                    <TableCell className="text-xs">{g.semester}</TableCell>
+                                                    <TableCell className="text-xs">{g.academic_year}</TableCell>
                                                     <TableCell className="text-right">
-                                                        <GradeDialog santriList={santriList || []} grade={g} />
+                                                        {activeProgram === 'Tahfidz' ? (
+                                                            <TahfidzGradeDialog santriList={santriList || []} grade={g} />
+                                                        ) : (
+                                                            <GradeDialog santriList={santriList || []} grade={g} />
+                                                        )}
                                                     </TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground text-sm">
-                                                    Tidak ada data nilai.
+                                                <TableCell colSpan={activeProgram === 'Diniyah' ? 8 : 6} className="h-24 text-center text-muted-foreground text-sm">
+                                                    Tidak ada data nilai {activeProgram}.
                                                 </TableCell>
                                             </TableRow>
                                         )}
@@ -329,145 +439,36 @@ export default async function GradesPage({
                 </TabsContent>
 
                 <TabsContent value="class" className="space-y-4">
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-lg">Filter Kelas</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <form className="flex items-center gap-3 flex-wrap">
-                                <input type="hidden" name="tab" value="class" />
-                                <Select name="class" defaultValue={selectedClass}>
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue placeholder="Kelas" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {uniqueClasses.map(cls => (
-                                            <SelectItem key={cls} value={cls}>Kelas {cls}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Select name="year" defaultValue={selectedYear}>
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue placeholder="Tahun" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {[`${currentYear}/${currentYear + 1}`, `${currentYear - 1}/${currentYear}`].map(y => (
-                                            <SelectItem key={y} value={y}>{y}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Select name="semester" defaultValue={selectedSemester}>
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue placeholder="Semester" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {SEMESTERS.map(s => (
-                                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Button type="submit">Filter</Button>
-                            </form>
+                    <BulkInputFilter
+                        classes={uniqueClasses}
+                        subjects={activeProgram === 'Tahfidz' ? TAHFIDZ_SUBJECTS : DINIYAH_SUBJECTS}
+                        years={ACADEMIC_YEARS}
+                        semesters={SEMESTERS}
+                        activeProgram={activeProgram}
+                    />
+
+                    <Card className="overflow-hidden border-none md:border md:border-border bg-transparent md:bg-white shadow-none md:shadow-sm">
+                        <CardContent className="p-0 md:p-6">
+                            {(shouldFetchInputData && batchSubject) ? (
+                                <BulkGradeForm
+                                    santriList={classSantri}
+                                    existingGrades={classGrades}
+                                    subject={batchSubject}
+                                    semester={batchSemester}
+                                    academicYear={batchYear === 'all' ? `${currentYear}/${currentYear + 1}` : batchYear}
+                                    programType={activeProgram}
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center p-12 text-center">
+                                    <BookOpen className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                                    <h3 className="text-lg font-medium text-slate-900">Pilih Kelas & Mapel</h3>
+                                    <p className="text-slate-500 max-w-sm mt-1">
+                                        Silakan pilih {activeProgram === 'Diniyah' ? 'Kelas dan' : ''} Mata Pelajaran untuk mulai input nilai secara masal.
+                                    </p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
-
-                    {selectedClass && (
-                        <Card className="overflow-hidden border-none md:border md:border-border bg-transparent md:bg-white shadow-none md:shadow-sm">
-                            <CardContent className="p-0">
-                                {/* Mobile Card List */}
-                                <div className="grid grid-cols-1 gap-3 md:hidden">
-                                    {classSantri.map((santri) => {
-                                        const santriGrades = classGrades.filter(g => g.santri_id === santri.id)
-                                        const gradeCount = santriGrades.length
-                                        const avgGrade = gradeCount > 0
-                                            ? Math.round(santriGrades.reduce((sum, g) => sum + (parseInt(g.grade) || 0), 0) / gradeCount)
-                                            : null
-
-                                        return (
-                                            <div key={santri.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="space-y-1">
-                                                        <h4 className="font-bold text-slate-900">{santri.name}</h4>
-                                                        <span className="text-[10px] text-muted-foreground font-mono bg-slate-100 px-1 rounded">{santri.nis}</span>
-                                                    </div>
-                                                    {avgGrade !== null ? (
-                                                        <div className="text-right">
-                                                            <div className="text-[10px] text-muted-foreground mb-1">Rata-rata</div>
-                                                            <Badge className={`${getGradeColor(String(avgGrade))} border-none h-8 w-8 flex items-center justify-center rounded-full px-0 font-bold`}>
-                                                                {avgGrade}
-                                                            </Badge>
-                                                        </div>
-                                                    ) : (
-                                                        <Badge variant="outline" className="text-[10px] text-muted-foreground border-slate-200">Belum ada nilai</Badge>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex justify-between items-center pt-2 border-t border-slate-50">
-                                                    <div className="text-xs text-muted-foreground">
-                                                        <span className="font-bold text-slate-700">{gradeCount}</span> Mapel terinput
-                                                    </div>
-                                                    <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
-                                                        <Link href={`/grades/santri/${santri.id}`}>Detail</Link>
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-
-                                {/* Desktop Table View */}
-                                <div className="hidden md:block">
-                                    <Table>
-                                        <TableHeader className="bg-slate-50">
-                                            <TableRow>
-                                                <TableHead className="w-[50px]">No</TableHead>
-                                                <TableHead>Nama Santri</TableHead>
-                                                <TableHead className="text-center">Mapel</TableHead>
-                                                <TableHead className="text-center">Rata-rata</TableHead>
-                                                <TableHead className="text-right">Aksi</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {classSantri.map((santri, index) => {
-                                                const santriGrades = classGrades.filter(g => g.santri_id === santri.id)
-                                                const gradeCount = santriGrades.length
-                                                const avgGrade = gradeCount > 0
-                                                    ? Math.round(santriGrades.reduce((sum, g) => sum + (parseInt(g.grade) || 0), 0) / gradeCount)
-                                                    : null
-
-                                                return (
-                                                    <TableRow key={santri.id}>
-                                                        <TableCell className="text-muted-foreground text-xs">{index + 1}</TableCell>
-                                                        <TableCell>
-                                                            <div className="font-semibold text-slate-900">{santri.name}</div>
-                                                            <div className="text-[10px] text-muted-foreground font-mono">{santri.nis}</div>
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-100">{gradeCount}</Badge>
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            {avgGrade !== null ? (
-                                                                <Badge className={`${getGradeColor(String(avgGrade))} border-none font-bold`}>
-                                                                    {avgGrade}
-                                                                </Badge>
-                                                            ) : (
-                                                                <span className="text-muted-foreground text-xs">-</span>
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell className="text-right">
-                                                            <Button variant="ghost" size="sm" asChild>
-                                                                <Link href={`/grades/santri/${santri.id}`}>Detail</Link>
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
                 </TabsContent>
             </Tabs>
         </div>

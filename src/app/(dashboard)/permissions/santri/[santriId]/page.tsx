@@ -72,7 +72,7 @@ export default async function SantriPermissionHistoryPage({
     const pendingCount = thisYearPermissions.filter(p => p.status === 'pending').length
 
     // Get santri list for the dialog (just this one for quick add)
-    const santriList = [{ id: santri.id, name: santri.name, nis: santri.nis }]
+    const santriList = [{ id: santri.id, name: santri.name, nis: santri.nis, class: santri.class }]
 
     // Group permissions by month for timeline
     const permissionsByMonth: Record<string, any[]> = {}

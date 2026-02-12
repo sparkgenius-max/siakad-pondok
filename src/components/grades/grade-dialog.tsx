@@ -34,13 +34,8 @@ import { Plus, Check, ChevronsUpDown, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SantriOption } from '@/types'
 
-// Daftar mata pelajaran pondok pesantren
-const SUBJECTS = [
-    'Al-Quran', 'Tajwid', 'Tafsir', 'Hadits', 'Fiqih', 'Ushul Fiqih',
-    'Aqidah', 'Akhlaq', 'Nahwu', 'Shorof', 'Balaghah', 'Muthalaah',
-    'Imla', 'Insya', 'Mahfudzat', 'Tarikh Islam', 'Bahasa Arab',
-    'Bahasa Indonesia', 'Bahasa Inggris', 'Matematika', 'IPA', 'IPS'
-]
+// Daftar mata pelajaran Diniyah
+import { ACADEMIC_YEARS, SEMESTERS, DINIYAH_SUBJECTS } from '@/lib/constants'
 
 function SubmitButton({ isEdit }: { isEdit: boolean }) {
     const { pending } = useFormStatus()
@@ -57,6 +52,22 @@ export function GradeDialog({ santriList, grade }: { santriList: SantriOption[],
     const [openSubject, setOpenSubject] = useState(false)
     const [selectedSantriId, setSelectedSantriId] = useState<string>(grade?.santri_id || "")
     const [selectedSubject, setSelectedSubject] = useState<string>(grade?.subject || "")
+    const [selectedClass, setSelectedClass] = useState<string>("all")
+
+    // Sort classes: Ula -> Wustha -> Ulya
+    const diniyahOrder = ['Ula', 'Wustha', 'Ulya']
+    const uniqueClasses = [...new Set(santriList.map(s => s.class).filter(Boolean))].sort((a, b) => {
+        const indexA = diniyahOrder.indexOf(a)
+        const indexB = diniyahOrder.indexOf(b)
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB
+        if (indexA !== -1) return -1
+        if (indexB !== -1) return 1
+        return a.localeCompare(b)
+    })
+
+    const filteredSantriList = selectedClass === 'all'
+        ? santriList
+        : santriList.filter(s => s.class === selectedClass)
 
     async function handleSubmit(formData: FormData) {
         if (!selectedSantriId) {
@@ -112,6 +123,37 @@ export function GradeDialog({ santriList, grade }: { santriList: SantriOption[],
                 <form action={handleSubmit} className="grid gap-4 py-4">
                     {grade && <input type="hidden" name="id" value={grade.id} />}
 
+                    {/* Program Field (Read Only) */}
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right">Program</Label>
+                        <Input value="Diniyah" disabled className="col-span-3 bg-slate-50" />
+                    </div>
+
+                    {/* Class Filter */}
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right">Filter Kelas</Label>
+                        <Select
+                            onValueChange={(val) => {
+                                // Reset selected santri if class changes
+                                if (val !== selectedClass) {
+                                    setSelectedSantriId("")
+                                }
+                                setSelectedClass(val)
+                            }}
+                            value={selectedClass}
+                        >
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Semua Kelas" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua Kelas</SelectItem>
+                                {uniqueClasses.map(c => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-right">Santri</Label>
                         <div className="col-span-3">
@@ -136,7 +178,7 @@ export function GradeDialog({ santriList, grade }: { santriList: SantriOption[],
                                         <CommandList>
                                             <CommandEmpty>Santri tidak ditemukan.</CommandEmpty>
                                             <CommandGroup>
-                                                {santriList?.map((santri) => (
+                                                {filteredSantriList.map((santri) => (
                                                     <CommandItem
                                                         key={santri.id}
                                                         value={santri.name}
@@ -164,25 +206,28 @@ export function GradeDialog({ santriList, grade }: { santriList: SantriOption[],
 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="academic_year" className="text-right">Tahun Ajaran</Label>
-                        <Input
-                            id="academic_year"
-                            name="academic_year"
-                            defaultValue={grade?.academic_year || `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`}
-                            className="col-span-3"
-                            placeholder="contoh: 2024/2025"
-                            required
-                        />
+                        <Select name="academic_year" defaultValue={grade?.academic_year || ACADEMIC_YEARS[0]}>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Pilih Tahun" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {ACADEMIC_YEARS.map(y => (
+                                    <SelectItem key={y} value={y}>{y}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="semester" className="text-right">Semester</Label>
-                        <Select name="semester" defaultValue={grade?.semester || "Ganjil"}>
+                        <Select name="semester" defaultValue={grade?.semester || SEMESTERS[0].value}>
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Pilih Semester" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Ganjil">Ganjil (Semester 1)</SelectItem>
-                                <SelectItem value="Genap">Genap (Semester 2)</SelectItem>
+                                {SEMESTERS.map(s => (
+                                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -208,7 +253,7 @@ export function GradeDialog({ santriList, grade }: { santriList: SantriOption[],
                                         <CommandList>
                                             <CommandEmpty>Tidak ditemukan.</CommandEmpty>
                                             <CommandGroup>
-                                                {SUBJECTS.map((subj) => (
+                                                {DINIYAH_SUBJECTS.map((subj) => (
                                                     <CommandItem
                                                         key={subj}
                                                         value={subj}
@@ -235,14 +280,30 @@ export function GradeDialog({ santriList, grade }: { santriList: SantriOption[],
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="grade" className="text-right">Nilai</Label>
+                        <Label htmlFor="score_theory" className="text-right">Nilai Teori</Label>
                         <Input
-                            id="grade"
-                            name="grade"
-                            defaultValue={grade?.grade}
+                            id="score_theory"
+                            name="score_theory"
+                            type="number"
+                            min="0"
+                            max="100"
+                            defaultValue={grade?.score_theory}
                             className="col-span-3"
-                            placeholder="contoh: 85, A, atau B+"
-                            required
+                            placeholder="0-100"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="score_practice" className="text-right">Nilai Praktek</Label>
+                        <Input
+                            id="score_practice"
+                            name="score_practice"
+                            type="number"
+                            min="0"
+                            max="100"
+                            defaultValue={grade?.score_practice}
+                            className="col-span-3"
+                            placeholder="0-100"
                         />
                     </div>
 

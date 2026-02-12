@@ -23,17 +23,26 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import type { Program } from '@/types'
 
-export function SantriActions({ santri }: { santri: any }) {
+export function SantriActions({
+    santri,
+    programs = [],
+    enrolledProgramIds = []
+}: {
+    santri: any
+    programs?: Program[]
+    enrolledProgramIds?: string[]
+}) {
     const [showEditDialog, setShowEditDialog] = useState(false)
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
     const handleDelete = async () => {
         try {
             await deleteSantri(santri.id)
-            toast.success('Santri deleted successfully')
+            toast.success('Santri berhasil dihapus')
         } catch (error) {
-            toast.error('Failed to delete santri')
+            toast.error('Gagal menghapus santri')
         } finally {
             setShowDeleteDialog(false)
         }
@@ -52,7 +61,7 @@ export function SantriActions({ santri }: { santri: any }) {
                     <DropdownMenuItem asChild>
                         <Link href={`/santri/${santri.id}`}>
                             <Eye className="mr-2 h-4 w-4" />
-                            View
+                            Lihat Detail
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
@@ -61,25 +70,23 @@ export function SantriActions({ santri }: { santri: any }) {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-red-600 focus:text-red-600">
                         <Trash className="mr-2 h-4 w-4" />
-                        Delete
+                        Hapus
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
-
-
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Yakin ingin menghapus?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the santri
-                            and all associated data.
+                            Tindakan ini tidak bisa dibatalkan. Semua data santri ini termasuk pembayaran,
+                            perizinan, dan nilai akan ikut terhapus.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Hapus</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -87,6 +94,8 @@ export function SantriActions({ santri }: { santri: any }) {
             {showEditDialog && (
                 <SantriDialog
                     santri={santri}
+                    programs={programs}
+                    enrolledProgramIds={enrolledProgramIds}
                     open={showEditDialog}
                     onOpenChange={setShowEditDialog}
                 />
