@@ -30,7 +30,7 @@ export function LoginForm() {
                 </div>
                 <CardTitle className="text-2xl font-bold text-emerald-800">SIPPIA IDAMAN</CardTitle>
                 <CardDescription className="text-emerald-600/80 font-medium">
-                    Sistem Informasi Akademik<br />Pondok Pesantren Imam Ad-Damanhuri
+                    Sistem Informasi Pondok Pesantren<br />Imam Ad-Damanhuri
                 </CardDescription>
             </CardHeader>
             <form action={formAction}>
