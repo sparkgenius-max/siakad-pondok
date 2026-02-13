@@ -135,7 +135,15 @@ export default async function SantriPage({
                                     <span>•</span>
                                     <span>Kelas {s.class}</span>
                                     <span>•</span>
-                                    <span className="font-medium text-slate-600">{s.program}</span>
+                                    <Badge
+                                        variant="secondary"
+                                        className={`text-[10px] px-1.5 py-0 border-none ${s.program === 'Diniyah'
+                                            ? 'bg-emerald-100 text-emerald-700'
+                                            : 'bg-blue-100 text-blue-700'
+                                            }`}
+                                    >
+                                        {s.program}
+                                    </Badge>
                                 </div>
                             </div>
                         ))
@@ -175,7 +183,13 @@ export default async function SantriPage({
                                     <TableCell>{s.dorm || '-'}</TableCell>
                                     <TableCell>{s.class}</TableCell>
                                     <TableCell>
-                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 whitespace-nowrap bg-slate-50">
+                                        <Badge
+                                            variant="outline"
+                                            className={`text-[10px] px-2 py-0.5 whitespace-nowrap border-none font-semibold ${s.program === 'Diniyah'
+                                                    ? 'bg-emerald-100 text-emerald-700'
+                                                    : 'bg-blue-100 text-blue-700'
+                                                }`}
+                                        >
                                             {s.program || '-'}
                                         </Badge>
                                     </TableCell>
