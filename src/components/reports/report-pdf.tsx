@@ -249,26 +249,47 @@ export const ReportDocument = ({ data }: { data: any }) => {
 
                 {/* GRADES TABLE */}
                 <View style={styles.table}>
-                    <View style={[styles.tableRow, styles.tableHeader]}>
-                        <Text style={[styles.tableCell, { width: '10%' }]}>NO</Text>
-                        <Text style={[styles.tableCell, { width: '35%' }]}>MATA PELAJARAN</Text>
+                    <View style={[styles.tableRow, styles.tableHeader, { alignItems: 'stretch', minHeight: 40 }]}>
+                        <View style={[styles.tableCell, { width: '10%', justifyContent: 'center' }]}>
+                            <Text>NO</Text>
+                        </View>
+                        <View style={[styles.tableCell, { width: '35%', justifyContent: 'center' }]}>
+                            <Text>MATA PELAJARAN</Text>
+                        </View>
                         {isTahfidz ? (
                             <>
-                                <Text style={[styles.tableCell, { width: '20%' }]}>NILAI</Text>
-                                <Text style={[styles.tableCell, { width: '15%' }]}>HURUF</Text>
-                                <Text style={[styles.tableCell, { width: '20%' }, styles.lastCell]}>KETERANGAN</Text>
+                                <View style={[styles.tableCell, { width: '20%', justifyContent: 'center' }]}>
+                                    <Text>NILAI</Text>
+                                </View>
+                                <View style={[styles.tableCell, { width: '15%', justifyContent: 'center' }]}>
+                                    <Text>HURUF</Text>
+                                </View>
+                                <View style={[styles.tableCell, { width: '20%', justifyContent: 'center' }, styles.lastCell]}>
+                                    <Text>KETERANGAN</Text>
+                                </View>
                             </>
                         ) : (
                             <>
-                                <View style={{ width: '30%', flexDirection: 'column' }}>
-                                    <Text style={{ borderBottomWidth: 1, borderBottomColor: '#000', width: '100%', padding: 2 }}>NILAI</Text>
-                                    <View style={{ flexDirection: 'row', width: '100%' }}>
-                                        <Text style={[styles.tableCell, { width: '50%', borderRightWidth: 1, borderBottomWidth: 0, borderTopWidth: 0 }]}>TEORI</Text>
-                                        <Text style={[styles.tableCell, { width: '50%', borderRightWidth: 0, borderBottomWidth: 0, borderTopWidth: 0 }]}>PRAKTIK</Text>
+                                <View style={{ width: '30%', borderRightWidth: 1, borderRightColor: '#000', flexDirection: 'column' }}>
+                                    <View style={{ borderBottomWidth: 1, borderBottomColor: '#000', paddingVertical: 2, alignItems: 'center', justifyContent: 'center' }}>
+                                        <Text>NILAI</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', flex: 1 }}>
+                                        <View style={[styles.tableCell, { width: '50%', borderRightWidth: 1, borderBottomWidth: 0, borderTopWidth: 0, justifyContent: 'flex-start', paddingTop: 4, paddingHorizontal: 0 }]}>
+                                            <Text style={{ fontSize: 9 }}>TEORI</Text>
+                                        </View>
+                                        <View style={[styles.tableCell, { width: '50%', borderRightWidth: 0, borderBottomWidth: 0, borderTopWidth: 0, justifyContent: 'flex-start', paddingTop: 4, paddingHorizontal: 0 }]}>
+                                            <Text style={{ fontSize: 9 }}>PRAKTIK</Text>
+                                        </View>
                                     </View>
                                 </View>
-                                <Text style={[styles.tableCell, { width: '10%' }]}>RATA-RATA</Text>
-                                <Text style={[styles.tableCell, { width: '15%' }, styles.lastCell]}>PREDIKAT</Text>
+                                <View style={[styles.tableCell, { width: '10%', justifyContent: 'center', padding: 0 }]}>
+                                    <Text style={{ fontSize: 9, lineHeight: 0.9 }}>RATA-</Text>
+                                    <Text style={{ fontSize: 9, lineHeight: 0.9 }}>RATA</Text>
+                                </View>
+                                <View style={[styles.tableCell, styles.lastCell, { width: '15%', justifyContent: 'center' }]}>
+                                    <Text>PREDIKAT</Text>
+                                </View>
                             </>
                         )}
                     </View>
