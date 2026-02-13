@@ -63,7 +63,7 @@ export function BulkInputFilter({
                 </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
-                <div className="flex flex-wrap items-end gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {activeProgram === 'Diniyah' && (
                         <div className="space-y-2">
                             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -73,7 +73,7 @@ export function BulkInputFilter({
                                 value={currentClass}
                                 onValueChange={(v) => updateFilter('batch_class', v)}
                             >
-                                <SelectTrigger className="w-[160px]">
+                                <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Pilih Kelas" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -93,7 +93,7 @@ export function BulkInputFilter({
                             value={currentSubject}
                             onValueChange={(v) => updateFilter('batch_subject', v)}
                         >
-                            <SelectTrigger className="w-[220px]">
+                            <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Pilih Mapel" />
                             </SelectTrigger>
                             <SelectContent>
@@ -112,7 +112,7 @@ export function BulkInputFilter({
                             value={currentYear}
                             onValueChange={(v) => updateFilter('batch_year', v)}
                         >
-                            <SelectTrigger className="w-[140px]">
+                            <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Tahun" />
                             </SelectTrigger>
                             <SelectContent>
@@ -132,7 +132,7 @@ export function BulkInputFilter({
                             value={currentSemester}
                             onValueChange={(v) => updateFilter('batch_semester', v)}
                         >
-                            <SelectTrigger className="w-[140px]">
+                            <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Semester" />
                             </SelectTrigger>
                             <SelectContent>

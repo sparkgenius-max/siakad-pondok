@@ -80,7 +80,64 @@ export function AttendanceHistory({ historyGroups, activeProgram, selectedClass 
 
     return (
         <>
-            <div className="rounded-md border">
+            {/* Mobile View */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+                {historyGroups.length > 0 ? (
+                    historyGroups.map((group) => (
+                        <div key={group.date} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h4 className="font-bold text-slate-900">{formatDate(group.date)}</h4>
+                                <Badge className="bg-slate-100 text-slate-700 border-none font-bold">
+                                    Total: {group.total}
+                                </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-4 gap-2 text-center">
+                                <div className="bg-green-50 p-2 rounded-lg">
+                                    <div className="text-[10px] text-green-600 uppercase font-bold">Hadir</div>
+                                    <div className="text-lg font-bold text-green-700">{group.present}</div>
+                                </div>
+                                <div className="bg-yellow-50 p-2 rounded-lg">
+                                    <div className="text-[10px] text-yellow-600 uppercase font-bold">Sakit</div>
+                                    <div className="text-lg font-bold text-yellow-700">{group.sick}</div>
+                                </div>
+                                <div className="bg-blue-50 p-2 rounded-lg">
+                                    <div className="text-[10px] text-blue-600 uppercase font-bold">Izin</div>
+                                    <div className="text-lg font-bold text-blue-700">{group.permission}</div>
+                                </div>
+                                <div className="bg-red-50 p-2 rounded-lg">
+                                    <div className="text-[10px] text-red-600 uppercase font-bold">Alpha</div>
+                                    <div className="text-lg font-bold text-red-700">{group.alpha}</div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-2 border-t border-slate-50">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => setSelectedGroup(group)}
+                                >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    Detail
+                                </Button>
+                                <Button variant="outline" size="sm" className="flex-1" asChild>
+                                    <Link href={buildEditUrl(group.date)}>
+                                        <Pencil className="h-4 w-4 mr-1" />
+                                        Edit
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="text-center py-12 bg-white rounded-xl border border-dashed text-muted-foreground">
+                        Belum ada data absensi.
+                    </div>
+                )}
+            </div>
+
+            <div className="hidden md:block rounded-md border">
                 <Table>
                     <TableHeader className="bg-slate-50">
                         <TableRow>

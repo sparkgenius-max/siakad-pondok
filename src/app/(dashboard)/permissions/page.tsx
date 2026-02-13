@@ -198,35 +198,63 @@ export default async function PermissionsPage({
                 <TabsContent value={statusFilter} className="space-y-4">
                     <Card className="overflow-hidden border-none md:border md:border-border bg-transparent md:bg-white shadow-none md:shadow-sm">
                         <CardContent className="p-0">
-                            {/* Mobile Card List (Simplified for brevity, same structure as before but updated fields) */}
-                            <div className="grid grid-cols-1 gap-3 md:hidden">
+                            {/* Mobile View */}
+                            <div className="grid grid-cols-1 gap-4 md:hidden px-4 pb-4">
                                 {permissions?.length ? (
                                     permissions.map((p: any) => {
                                         const typeConfig = TYPE_LABELS[p.type] || { label: p.type, color: 'bg-gray-100 text-gray-800' }
                                         const statusConfig = STATUS_CONFIG[p.status] || STATUS_CONFIG.pending
+                                        const pCount = permissionCounts[p.santri_id] || 0
+                                        const isWarning = pCount > 4
+
                                         return (
-                                            <div key={p.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3">
+                                            <div key={p.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
                                                 <div className="flex justify-between items-start">
-                                                    <div className="space-y-1">
-                                                        <h4 className="font-bold text-slate-900">{p.santri?.name}</h4>
-                                                        <div className="flex items-center gap-2">
-                                                            <Badge variant="outline" className={`${typeConfig.color} text-[10px] h-5 border-none px-1.5`}>
+                                                    <div className="space-y-1.5">
+                                                        <Link href={`/santri/${p.santri?.id}`} className="hover:underline">
+                                                            <h4 className="font-bold text-slate-900">{p.santri?.name}</h4>
+                                                        </Link>
+                                                        <div className="flex flex-wrap gap-2 items-center">
+                                                            <span className="text-[10px] text-muted-foreground font-mono bg-slate-100 px-1 rounded">{p.santri?.nis}</span>
+                                                            <Badge variant="outline" className={`${typeConfig.color} text-[10px] h-5 border-none px-1.5 font-bold`}>
                                                                 {typeConfig.label}
                                                             </Badge>
                                                         </div>
                                                     </div>
-                                                    <Badge className={`${statusConfig.color} border-none`}>
+                                                    <Badge className={`${statusConfig.color} border-none font-bold py-1 px-3`}>
                                                         {statusConfig.label}
                                                     </Badge>
                                                 </div>
-                                                <div className="flex justify-end pt-2 border-t border-slate-50">
+
+                                                <div className="space-y-2 py-3 border-y border-slate-50">
+                                                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                                                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                                        <span className="font-medium">
+                                                            {new Date(p.start_date).toLocaleDateString('id-ID')} - {new Date(p.end_date).toLocaleDateString('id-ID')}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2 text-xs text-slate-500">
+                                                        <AlertCircle className="w-3.5 h-3.5 mt-0.5 text-slate-400 shrink-0" />
+                                                        <p className="italic line-clamp-2">{p.reason}</p>
+                                                    </div>
+                                                    {isWarning && (
+                                                        <div className="flex items-center gap-2 text-[10px] font-bold text-red-600 bg-red-50 p-1.5 rounded-lg border border-red-100">
+                                                            <AlertTriangle className="w-3.5 h-3.5" />
+                                                            Sudah Izin {pCount}x
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex justify-center pt-1">
                                                     <PermissionActions id={p.id} status={p.status} data={p} />
                                                 </div>
                                             </div>
                                         )
                                     })
                                 ) : (
-                                    <div className="text-center py-8">Tidak ada data</div>
+                                    <div className="text-center py-12 bg-white rounded-xl border border-dashed text-muted-foreground">
+                                        Tidak ada data perizinan.
+                                    </div>
                                 )}
                             </div>
 

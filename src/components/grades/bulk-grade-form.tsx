@@ -137,7 +137,78 @@ export function BulkGradeForm({
                 </Button>
             </div>
 
-            <div className="rounded-md border">
+            {/* Mobile View */}
+            <div className="md:hidden space-y-4">
+                {santriList.map((s, index) => {
+                    const grade = grades[s.id] || { theory: 0, practice: 0, total: 0 }
+                    return (
+                        <div key={s.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-4">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h4 className="font-bold text-slate-900">{s.name}</h4>
+                                    <p className="text-xs text-muted-foreground font-mono">{s.nis}</p>
+                                </div>
+                                <Badge variant="outline" className={`border-none ${getGradeColor(grade.total)}`}>
+                                    {grade.total >= 85 ? 'Mumtaz' :
+                                        grade.total >= 75 ? 'Jayyid Jiddan' :
+                                            grade.total >= 60 ? 'Jayyid' :
+                                                grade.total >= 50 ? 'Maqbul' : 'Rasib'}
+                                </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                {programType === 'Tahfidz' ? (
+                                    <div className="col-span-2 space-y-1.5 text-center">
+                                        <label className="text-[10px] text-muted-foreground uppercase font-bold">Nilai Tahfidz</label>
+                                        <div className="flex justify-center">
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                className="text-center font-bold text-xl h-12 w-32"
+                                                value={grade.total || ''}
+                                                onChange={(e) => handleInputChange(s.id, 'total', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] text-muted-foreground uppercase font-bold">Teori</label>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                className="text-center font-bold h-10"
+                                                value={grade.theory || ''}
+                                                onChange={(e) => handleInputChange(s.id, 'theory', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] text-muted-foreground uppercase font-bold">Praktek</label>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                className="text-center font-bold h-10"
+                                                value={grade.practice || ''}
+                                                onChange={(e) => handleInputChange(s.id, 'practice', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-span-2 flex items-center justify-between bg-slate-50 p-2 rounded-lg mt-1">
+                                            <span className="text-xs font-bold text-slate-700">Total Nilai:</span>
+                                            <span className="text-xl font-black text-blue-700">{grade.total}</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block rounded-md border">
                 <Table>
                     <TableHeader className="bg-slate-50">
                         <TableRow>

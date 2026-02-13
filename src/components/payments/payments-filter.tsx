@@ -62,13 +62,13 @@ export function PaymentsFilter({
     }
 
     return (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 flex-wrap w-full">
             <Select
                 value={String(selectedMonth)}
                 onValueChange={(val) => handleFilterChange('month', val)}
                 disabled={isPending}
             >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Bulan" />
                 </SelectTrigger>
                 <SelectContent>
@@ -83,7 +83,7 @@ export function PaymentsFilter({
                 onValueChange={(val) => handleFilterChange('year', val)}
                 disabled={isPending}
             >
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-full sm:w-[120px]">
                     <SelectValue placeholder="Tahun" />
                 </SelectTrigger>
                 <SelectContent>
@@ -94,7 +94,7 @@ export function PaymentsFilter({
             </Select>
 
             {isPending && (
-                <div className="flex items-center">
+                <div className="flex items-center py-2 sm:py-0">
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
             )}

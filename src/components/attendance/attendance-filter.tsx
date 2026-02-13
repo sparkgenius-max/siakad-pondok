@@ -59,29 +59,29 @@ export function AttendanceFilter({
     }
 
     return (
-        <div className="flex items-center gap-4 flex-wrap">
-            <div className="space-y-2">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
+            <div className="space-y-2 w-full md:w-auto">
                 <label className="text-sm font-medium">Tanggal</label>
                 <div className="relative">
                     <Input
                         type="date"
                         value={selectedDate}
                         onChange={handleDateChange}
-                        className="w-[180px]"
+                        className="w-full md:w-[180px]"
                         disabled={isPending}
                     />
                 </div>
             </div>
 
             {activeProgram === 'Diniyah' && (
-                <div className="space-y-2">
+                <div className="space-y-2 w-full md:w-auto">
                     <label className="text-sm font-medium">Kelas</label>
                     <Select
                         value={selectedClass}
                         onValueChange={handleClassChange}
                         disabled={isPending}
                     >
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-full md:w-[180px]">
                             <SelectValue placeholder="Pilih Kelas" />
                         </SelectTrigger>
                         <SelectContent>
@@ -94,7 +94,7 @@ export function AttendanceFilter({
             )}
 
             {isPending && (
-                <div className="flex items-end h-[60px] pb-3">
+                <div className="flex items-center md:items-end md:h-[60px] md:pb-3">
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
             )}

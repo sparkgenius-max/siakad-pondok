@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Menu } from 'lucide-react'
 import { Sidebar } from './sidebar'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 
 interface MobileSidebarProps {
@@ -28,7 +28,13 @@ export const MobileSidebar = ({ role }: MobileSidebarProps) => {
                     <Menu />
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 border-none w-64 bg-slate-900">
+            <SheetContent side="left" className="p-0 border-none w-64 bg-slate-900 gap-0">
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Menu Navigasi</SheetTitle>
+                    <SheetDescription>
+                        Akses cepat ke berbagai fitur Siakad Pondok
+                    </SheetDescription>
+                </SheetHeader>
                 <Sidebar role={role} />
             </SheetContent>
         </Sheet>

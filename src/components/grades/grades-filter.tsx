@@ -79,13 +79,13 @@ export function GradesFilter({
                 Filter:
             </div>
 
-            <div className="flex flex-wrap gap-2 items-center flex-1">
+            <div className="flex flex-wrap gap-2 items-center flex-1 w-full">
                 {activeProgram === 'Diniyah' && (
                     <Select
                         value={searchParams.get('class') || 'all'}
                         onValueChange={(val) => handleFilterChange('class', val)}
                     >
-                        <SelectTrigger className="w-[130px] h-9">
+                        <SelectTrigger className="w-full sm:w-[130px] h-9">
                             <SelectValue placeholder="Semua Kelas" />
                         </SelectTrigger>
                         <SelectContent>
@@ -101,7 +101,7 @@ export function GradesFilter({
                     value={searchParams.get('subject') || 'all'}
                     onValueChange={(val) => handleFilterChange('subject', val)}
                 >
-                    <SelectTrigger className="w-[180px] h-9">
+                    <SelectTrigger className="w-full sm:w-[180px] h-9">
                         <SelectValue placeholder="Semua Mapel" />
                     </SelectTrigger>
                     <SelectContent>
@@ -116,7 +116,7 @@ export function GradesFilter({
                     value={searchParams.get('year') || 'all'}
                     onValueChange={(val) => handleFilterChange('year', val)}
                 >
-                    <SelectTrigger className="w-[140px] h-9">
+                    <SelectTrigger className="w-full sm:w-[140px] h-9">
                         <SelectValue placeholder="Semua Tahun" />
                     </SelectTrigger>
                     <SelectContent>
@@ -131,7 +131,7 @@ export function GradesFilter({
                     value={searchParams.get('semester') || 'Ganjil'}
                     onValueChange={(val) => handleFilterChange('semester', val)}
                 >
-                    <SelectTrigger className="w-[140px] h-9">
+                    <SelectTrigger className="w-full sm:w-[140px] h-9">
                         <SelectValue placeholder="Semester" />
                     </SelectTrigger>
                     <SelectContent>
@@ -146,7 +146,7 @@ export function GradesFilter({
                         variant="ghost"
                         size="sm"
                         onClick={clearFilters}
-                        className="h-9 px-2 text-muted-foreground hover:text-red-500"
+                        className="h-9 px-2 text-muted-foreground hover:text-red-500 w-full sm:w-auto"
                     >
                         <X className="w-4 h-4 mr-1" />
                         Reset

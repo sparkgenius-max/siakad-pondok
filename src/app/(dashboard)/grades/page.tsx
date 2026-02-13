@@ -328,6 +328,61 @@ export default async function GradesPage({
 
                     <Card className="overflow-hidden border-none md:border md:border-border bg-transparent md:bg-white shadow-none md:shadow-sm">
                         <CardContent className="p-0">
+                            {/* Mobile Card List */}
+                            <div className="grid grid-cols-1 gap-4 md:hidden p-4">
+                                {grades?.length ? (
+                                    grades.map((g: any) => (
+                                        <div key={g.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3">
+                                            <div className="flex justify-between items-start">
+                                                <div className="space-y-1">
+                                                    <Link href={`/santri/${g.santri?.id}`} className="hover:underline">
+                                                        <h4 className="font-bold text-slate-900">{g.santri?.name}</h4>
+                                                    </Link>
+                                                    <div className="flex flex-wrap gap-2 items-center">
+                                                        <span className="text-[10px] text-muted-foreground font-mono bg-slate-100 px-1 rounded">{g.santri?.nis}</span>
+                                                        <Badge variant="outline" className="text-[10px] h-5 border-none bg-slate-100 text-slate-700">
+                                                            Kelas {g.santri?.class}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                <Badge className={`${getGradeColor(g.score_total)} border-none font-bold`}>
+                                                    {g.score_total || 0}
+                                                </Badge>
+                                            </div>
+
+                                            <div className="flex justify-between items-center py-2 border-t border-slate-50">
+                                                <div className="space-y-1">
+                                                    <div className="text-xs font-semibold text-slate-800">{g.subject}</div>
+                                                    <div className="text-[10px] text-muted-foreground">{g.semester} • {g.academic_year}</div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    {activeProgram === 'Tahfidz' ? (
+                                                        <TahfidzGradeDialog santriList={santriList || []} grade={g} />
+                                                    ) : (
+                                                        <GradeDialog santriList={santriList || []} grade={g} />
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {activeProgram === 'Diniyah' && (
+                                                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-50 text-center">
+                                                    <div className="bg-slate-50 p-1 rounded">
+                                                        <div className="text-[10px] text-muted-foreground uppercase">Teori</div>
+                                                        <div className="text-sm font-bold">{g.score_theory || 0}</div>
+                                                    </div>
+                                                    <div className="bg-slate-50 p-1 rounded">
+                                                        <div className="text-[10px] text-muted-foreground uppercase">Praktek</div>
+                                                        <div className="text-sm font-bold">{g.score_practice || 0}</div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-muted-foreground">Tidak ada data.</div>
+                                )}
+                            </div>
+
                             {/* Desktop Table - Dynamic Columns based on Program */}
                             <div className="hidden md:block">
                                 <Table>
