@@ -11,7 +11,11 @@ export default async function MonitoringPage() {
     const supabase = createAdminClient()
 
     // Fetch Lists
-    const { data: santriList } = await supabase.from('santri').select('id, name, nis, class').eq('status', 'active').order('name')
+    const { data: santriList } = await supabase.from('santri')
+        .select('id, name, nis, class')
+        .eq('status', 'active')
+        .eq('program', 'Tahfidz')
+        .order('name')
 
     // Fetch Recent Monitoring Data (Last 50)
     const { data: monitoringLogs, error } = await supabase

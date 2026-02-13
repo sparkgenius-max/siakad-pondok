@@ -162,19 +162,27 @@ export const ReportDocument = ({ data }: { data: any }) => {
     const isTahfidz = data.program === 'Tahfidz';
 
     // Aggregate Hafalan for Tahfidz (Monthly)
-    const hafalanByMonth: Record<string, { ziyadah: number, murojaah: number }> = {};
+    const hafalanByMonth: Record<string, { ziyadah: number, murojaah: number, sortKey: string }> = {};
     if (isTahfidz && data.hafalan) {
         data.hafalan.forEach((h: any) => {
             const date = new Date(h.date);
             const monthKey = date.toLocaleDateString('id-ID', { month: 'long' }).toUpperCase();
+            const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
             if (!hafalanByMonth[monthKey]) {
-                hafalanByMonth[monthKey] = { ziyadah: 0, murojaah: 0 };
+                hafalanByMonth[monthKey] = { ziyadah: 0, murojaah: 0, sortKey: yearMonth };
             }
             hafalanByMonth[monthKey].ziyadah += (h.ziyadah_pages || 0);
             hafalanByMonth[monthKey].murojaah += (h.murojaah_juz || 0);
         });
     }
-    const months = Object.keys(hafalanByMonth);
+
+    // Sort by sortKey descending to get latest, take 6, then reverse to display chronologically
+    const sortedMonthKeys = Object.entries(hafalanByMonth)
+        .sort((a, b) => b[1].sortKey.localeCompare(a[1].sortKey))
+        .slice(0, 6)
+        .sort((a, b) => a[1].sortKey.localeCompare(b[1].sortKey))
+        .map(entry => entry[0]);
 
     // Filter grades - if Diniyah, show all. If Tahfidz, maybe show specific ones if they exist?
     // For now, show all available grades for both.
@@ -182,7 +190,7 @@ export const ReportDocument = ({ data }: { data: any }) => {
 
     return (
         <Document>
-            <Page size="A4" style={styles.page}>
+            <Page size={[612, 935]} style={[styles.page, { paddingBottom: 50 }]}>
                 {/* Header / KOP */}
                 <View style={styles.headerContainer}>
                     {/* eslint-disable-next-line jsx-a11y/alt-text */}
@@ -307,7 +315,9 @@ export const ReportDocument = ({ data }: { data: any }) => {
                                                 g.score_total >= 60 ? 'C' : 'D'}
                                     </Text>
                                     <Text style={[styles.tableCell, { width: '20%' }, styles.lastCell]}>
-                                        {g.score_total >= 70 ? 'Lulus' : 'Remidi'}
+                                        {g.score_total >= 85 ? 'Dipertahankan' :
+                                            g.score_total >= 75 ? 'Ditingkatkan' :
+                                                g.score_total >= 60 ? 'Diperbaiki' : '-'}
                                     </Text>
                                 </>
                             ) : (
@@ -339,7 +349,7 @@ export const ReportDocument = ({ data }: { data: any }) => {
                             <Text style={[styles.tableCell, { width: '30%' }]}>ZIYADAH/HLM</Text>
                             <Text style={[styles.tableCell, { width: '30%' }, styles.lastCell]}>MURAJA'AH/JUZ</Text>
                         </View>
-                        {months.length > 0 ? months.map((month, idx) => (
+                        {sortedMonthKeys.length > 0 ? sortedMonthKeys.map((month, idx) => (
                             <View key={idx} style={styles.tableRow}>
                                 <Text style={[styles.tableCell, styles.tableCellLeft, { width: '40%' }]}>{month}</Text>
                                 <Text style={[styles.tableCell, { width: '30%' }]}>{hafalanByMonth[month].ziyadah}</Text>

@@ -131,10 +131,18 @@ export function SantriDialog({
                         <input type="hidden" name="class" value="-" />
                     )}
 
-                    <div className="grid grid-cols-[120px_1fr] items-center gap-4">
-                        <Label htmlFor="nis" className="text-right">NIS</Label>
-                        <Input id="nis" name="nis" defaultValue={santri?.nis} required />
-                    </div>
+                    {santri && (
+                        <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                            <Label htmlFor="nis" className="text-right">NIS</Label>
+                            <Input
+                                id="nis"
+                                name="nis"
+                                defaultValue={santri.nis}
+                                readOnly
+                                className="bg-muted cursor-not-allowed"
+                            />
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-[120px_1fr] items-center gap-4">
                         <Label htmlFor="name" className="text-right">Nama</Label>

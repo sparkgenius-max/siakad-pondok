@@ -22,12 +22,13 @@ export const dynamic = 'force-dynamic'
 export default async function SantriPage({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string; q?: string; limit?: string }>
+    searchParams: Promise<{ page?: string; q?: string; limit?: string; program?: string }>
 }) {
     const params = await searchParams
     const supabase = createAdminClient()
     const page = Number(params.page) || 1
     const limit = Number(params.limit) || 10
+    const program = params.program || 'all'
     const from = (page - 1) * limit
     const to = from + limit - 1
 
@@ -42,6 +43,10 @@ export default async function SantriPage({
         query = query.or(`name.ilike.%${params.q}%,nis.ilike.%${params.q}%`)
     }
 
+    if (program !== 'all') {
+        query = query.eq('program', program)
+    }
+
     const { data: santri, count } = await query
 
     const totalPages = count ? Math.ceil(count / limit) : 0
@@ -51,6 +56,7 @@ export default async function SantriPage({
         const urlParams = new URLSearchParams()
         if (p > 1) urlParams.set('page', String(p))
         if (params.q) urlParams.set('q', params.q)
+        if (program !== 'all') urlParams.set('program', program)
         if (limit !== 10) urlParams.set('limit', String(limit))
         return `/santri?${urlParams.toString()}`
     }
@@ -58,16 +64,16 @@ export default async function SantriPage({
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Manajemen Santri</h2>
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Manajemen Santri</h2>
                 <div className="flex items-center gap-2">
                     <SantriImportDialog />
                     <SantriDialog />
                 </div>
             </div>
 
-            {/* Search */}
-            <div className="flex flex-col gap-4 mt-2">
-                <form className="flex items-center gap-2">
+            {/* Search & Filter */}
+            <div className="flex flex-col md:flex-row gap-4 mt-2">
+                <form className="flex-1 flex items-center gap-2">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -77,9 +83,33 @@ export default async function SantriPage({
                             defaultValue={params.q}
                         />
                         {limit !== 10 && <input type="hidden" name="limit" value={limit} />}
+                        {program !== 'all' && <input type="hidden" name="program" value={program} />}
                     </div>
                     <Button type="submit" variant="secondary" className="shrink-0">Cari</Button>
                 </form>
+
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center bg-white border rounded-lg p-1">
+                        <Link
+                            href={`/santri?program=all${params.q ? `&q=${params.q}` : ''}${limit !== 10 ? `&limit=${limit}` : ''}`}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${program === 'all' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            Semua
+                        </Link>
+                        <Link
+                            href={`/santri?program=Diniyah${params.q ? `&q=${params.q}` : ''}${limit !== 10 ? `&limit=${limit}` : ''}`}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${program === 'Diniyah' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            Diniyah
+                        </Link>
+                        <Link
+                            href={`/santri?program=Tahfidz${params.q ? `&q=${params.q}` : ''}${limit !== 10 ? `&limit=${limit}` : ''}`}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${program === 'Tahfidz' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            Tahfidz
+                        </Link>
+                    </div>
+                </div>
             </div>
 
             {/* Content: Mobile (Cards) and Desktop (Table) */}
