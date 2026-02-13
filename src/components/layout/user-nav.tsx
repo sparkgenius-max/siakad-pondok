@@ -32,7 +32,17 @@ export function UserNav({ email }: { email: string }) {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()} className="cursor-pointer">
+                <DropdownMenuItem
+                    onClick={async () => {
+                        try {
+                            await logout();
+                        } catch (error) {
+                            console.error('Logout failed:', error);
+                            window.location.href = '/login';
+                        }
+                    }}
+                    className="cursor-pointer"
+                >
                     Log out
                 </DropdownMenuItem>
             </DropdownMenuContent>

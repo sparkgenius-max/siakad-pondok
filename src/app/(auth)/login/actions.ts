@@ -28,7 +28,15 @@ export async function login(prevState: any, formData: FormData) {
 }
 
 export async function logout() {
+    console.log('[Auth Action] Logging out...')
     const supabase = await createClient()
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+        console.error('[Auth Action] Logout error:', error)
+    }
+
+    console.log('[Auth Action] Logout successful, redirecting to /login')
+    revalidatePath('/', 'layout')
     redirect('/login')
 }
