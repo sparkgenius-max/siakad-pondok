@@ -28,7 +28,7 @@ export function LoginForm() {
                         <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
                     </div>
                 </div>
-                <CardTitle className="text-2xl font-bold text-emerald-800">SIAKAD IDAMAN</CardTitle>
+                <CardTitle className="text-2xl font-bold text-emerald-800">SIPPIA IDAMAN</CardTitle>
                 <CardDescription className="text-emerald-600/80 font-medium">
                     Sistem Informasi Akademik<br />Pondok Pesantren Imam Ad-Damanhuri
                 </CardDescription>
