@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
     Dialog,
     DialogContent,
@@ -24,6 +24,32 @@ export function SantriImportDialog() {
     const [file, setFile] = useState<File | null>(null)
     const [loading, setLoading] = useState(false)
     const [preview, setPreview] = useState<any[]>([])
+    const [canScroll, setCanScroll] = useState(false)
+    const tableContainerRef = useRef<HTMLDivElement>(null)
+
+    // Check for horizontal overflow
+    const checkScroll = () => {
+        if (tableContainerRef.current) {
+            const { scrollWidth, clientWidth } = tableContainerRef.current
+            setCanScroll(scrollWidth > clientWidth)
+        }
+    }
+
+    useEffect(() => {
+        checkScroll()
+        window.addEventListener('resize', checkScroll)
+        return () => window.removeEventListener('resize', checkScroll)
+    }, [preview, open])
+
+    // Reset state when dialog is closed
+    useEffect(() => {
+        if (!open) {
+            const timer = setTimeout(() => {
+                resetState()
+            }, 300) // Small delay to wait for close animation
+            return () => clearTimeout(timer)
+        }
+    }, [open])
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0]
@@ -35,8 +61,17 @@ export function SantriImportDialog() {
                 const wb = XLSX.read(bstr, { type: 'binary' })
                 const wsname = wb.SheetNames[0]
                 const ws = wb.Sheets[wsname]
-                const data = XLSX.utils.sheet_to_json(ws)
-                setPreview(data.slice(0, 5)) // Preview first 5 rows
+                const rawData: any[] = XLSX.utils.sheet_to_json(ws)
+                const filteredData = rawData.filter((row: any) => {
+                    const name = row.nama || row.Name || row.name
+                    if (!name) return false
+                    const rowString = JSON.stringify(row).toUpperCase()
+                    if (rowString.includes('INSTRUKSI PENTING') || rowString.includes('WAJIB DIISI')) {
+                        return false
+                    }
+                    return true
+                })
+                setPreview(filteredData.slice(0, 5)) // Preview first 5 rows of valid data
             }
             reader.readAsBinaryString(selectedFile)
         }
@@ -96,9 +131,50 @@ export function SantriImportDialog() {
                 const wb = XLSX.read(bstr, { type: 'binary' })
                 const wsname = wb.SheetNames[0]
                 const ws = wb.Sheets[wsname]
-                const data = XLSX.utils.sheet_to_json(ws)
+                const rawData: any[] = XLSX.utils.sheet_to_json(ws)
 
-                const result = await importSantri(data)
+                // Sanitize: Filter out empty rows, instruction rows, and ensure plain objects
+                const sanitizedData = rawData
+                    .filter((row: any) => {
+                        // 1. Must have a name
+                        const name = row.nama || row.Name || row.name
+                        if (!name) return false
+
+                        // 2. Must not be an instruction row (checking common keywords in any field)
+                        const rowString = JSON.stringify(row).toUpperCase()
+                        if (rowString.includes('INSTRUKSI PENTING') || rowString.includes('WAJIB DIISI')) {
+                            return false
+                        }
+
+                        return true
+                    })
+                    .map((row: any) => {
+                        // 3. Ensure we pass ONLY plain types (strings, numbers, booleans)
+                        // This prevents "Only plain objects can be passed to Server Functions"
+                        const cleanRow: any = {}
+                        for (const key in row) {
+                            if (Object.prototype.hasOwnProperty.call(row, key)) {
+                                const value = row[key]
+                                // Convert anything complex (Dates, etc.) to string/primitive
+                                if (value instanceof Date) {
+                                    cleanRow[key] = value.toISOString()
+                                } else if (typeof value === 'object' && value !== null) {
+                                    cleanRow[key] = JSON.stringify(value)
+                                } else {
+                                    cleanRow[key] = value
+                                }
+                            }
+                        }
+                        return cleanRow
+                    })
+
+                if (sanitizedData.length === 0) {
+                    toast.error('Tidak ada data santri yang valid ditemukan dalam file')
+                    setLoading(false)
+                    return
+                }
+
+                const result = await importSantri(sanitizedData)
                 if (result.error) {
                     toast.error(result.error)
                 } else {
@@ -131,15 +207,15 @@ export function SantriImportDialog() {
                     <span className="sm:hidden">Import</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="w-[95vw] sm:max-w-[500px] gap-0 p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-2">
+            <DialogContent className="w-[95vw] sm:max-w-[700px] gap-0 p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                <DialogHeader className="p-6 pb-2 shrink-0 border-b">
                     <DialogTitle>Import Data Santri</DialogTitle>
                     <DialogDescription>
                         Unggah file Excel untuk mengimpor data santri secara massal.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="p-6 pt-2 space-y-6">
+                <div className="flex-1 overflow-y-auto p-6 pt-4 space-y-6 custom-scrollbar">
                     <div className="flex flex-col gap-2">
                         <Label htmlFor="template" className="text-sm font-medium">1. Unduh Template</Label>
                         <Button
@@ -156,6 +232,7 @@ export function SantriImportDialog() {
                     <div className="flex flex-col gap-2">
                         <Label htmlFor="file" className="text-sm font-medium">2. Pilih File Excel</Label>
                         <Input
+                            key={open ? 'active' : 'inactive'}
                             id="file"
                             type="file"
                             accept=".xlsx, .xls, .csv"
@@ -167,47 +244,60 @@ export function SantriImportDialog() {
                     {file && preview.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <Label className="text-sm font-medium">Preview Data (5 baris pertama):</Label>
-                            <div className="border rounded-lg p-0 bg-slate-50 overflow-hidden">
-                                <div className="overflow-x-auto max-w-full custom-scrollbar">
-                                    <table className="text-[10px] w-full border-collapse">
+                            <div className="border rounded-lg p-0 bg-slate-50 overflow-hidden shadow-sm">
+                                <div
+                                    ref={tableContainerRef}
+                                    className="overflow-x-auto max-w-full custom-scrollbar"
+                                >
+                                    <table className="text-[11px] w-full border-collapse">
                                         <thead>
-                                            <tr className="bg-slate-100 border-b">
-                                                {Object.keys(preview[0]).map(key => (
-                                                    <th key={key} className="text-left px-3 py-2 whitespace-nowrap font-bold text-slate-700 uppercase tracking-wider border-r last:border-0">{key}</th>
+                                            <tr className="bg-slate-100/80 border-b">
+                                                {/* Use all possible keys from first 5 rows to ensure consistency */}
+                                                {Array.from(new Set(preview.flatMap(Object.keys))).map(key => (
+                                                    <th key={key} className="text-left px-3 py-2.5 whitespace-nowrap font-semibold text-slate-700 uppercase tracking-wider border-r last:border-0">{key}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {preview.map((row, i) => (
-                                                <tr key={i} className="border-b last:border-0 hover:bg-slate-100/50 transition-colors">
-                                                    {Object.values(row).map((val: any, j) => (
-                                                        <td key={j} className="px-3 py-2 whitespace-nowrap text-slate-600 border-r last:border-0">{String(val)}</td>
-                                                    ))}
-                                                </tr>
-                                            ))}
+                                            {preview.map((row, i) => {
+                                                const allKeys = Array.from(new Set(preview.flatMap(Object.keys)))
+                                                return (
+                                                    <tr key={i} className="border-b last:border-0 hover:bg-slate-100/50 transition-colors">
+                                                        {allKeys.map((key, j) => (
+                                                            <td key={j} className="px-3 py-2 whitespace-nowrap text-slate-600 border-r last:border-0">
+                                                                {row[key] !== undefined && row[key] !== null ? String(row[key]) : '-'}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                )
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
-                                <div className="p-2 bg-slate-100/50 border-t text-[9px] text-center text-slate-400 font-medium sm:hidden">
-                                    Geser ke samping untuk melihat kolom lain &rarr;
-                                </div>
+                                {canScroll && (
+                                    <div className="p-2 bg-slate-100/50 border-t text-[10px] text-center text-slate-500 font-medium animate-in fade-in slide-in-from-bottom-1 duration-300">
+                                        Geser ke samping untuk melihat semua kolom &rarr;
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
 
                     {!file && (
-                        <Alert className="bg-blue-50 border-blue-200 py-3">
-                            <AlertCircle className="h-4 w-4 text-blue-600" />
-                            <AlertTitle className="text-blue-800 text-sm">Informasi Kolom</AlertTitle>
-                            <AlertDescription className="text-blue-700 text-[11px] leading-relaxed">
-                                Gunakan kolom: <b>nis, nama, jk (L/P), kelas, asrama, alamat, wali, hp_wali, program</b>.<br />
-                                <i>Nama wajib diisi. NIS otomatis dibuat jika kosong (Sequence). Data lama dengan NIS sama akan diperbarui.</i>
-                            </AlertDescription>
+                        <Alert className="bg-blue-50/50 border-blue-200 py-3">
+                            <AlertCircle className="h-4 w-4 text-blue-600 px-0" />
+                            <div className="ml-2">
+                                <AlertTitle className="text-blue-800 text-sm font-semibold">Informasi Kolom</AlertTitle>
+                                <AlertDescription className="text-blue-700 text-[11px] leading-relaxed mt-1">
+                                    Gunakan kolom: <span className="font-mono bg-blue-100 px-1 rounded text-blue-800">nis, nama, jk (L/P), kelas, asrama, alamat, wali, hp_wali, program</span>.<br />
+                                    <span className="mt-1 block"><i>Nama wajib diisi. NIS otomatis dibuat jika kosong. Data lama dengan NIS sama akan diperbarui.</i></span>
+                                </AlertDescription>
+                            </div>
                         </Alert>
                     )}
                 </div>
 
-                <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 mt-2">
+                <DialogFooter className="p-6 pt-2 border-t flex flex-col-reverse sm:flex-row gap-2 shrink-0">
                     <Button
                         variant="ghost"
                         onClick={() => setOpen(false)}
@@ -218,7 +308,7 @@ export function SantriImportDialog() {
                     <Button
                         onClick={handleImport}
                         disabled={!file || loading}
-                        className="w-full sm:w-auto min-w-[120px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-100"
+                        className="w-full sm:w-auto min-w-[140px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-100/50"
                     >
                         {loading ? (
                             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mengimpor...</>
