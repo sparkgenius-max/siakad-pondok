@@ -69,3 +69,39 @@ export async function deleteSantri(id: string) {
 
     revalidatePath('/santri')
 }
+
+export async function importSantri(data: any[]) {
+    const supabase = createAdminClient()
+
+    // Map and sanitize the data
+    const santriData = data.map(item => ({
+        nis: String(item.nis || item.NIS || ''),
+        name: String(item.nama || item.name || item.Nama || ''),
+        gender: String(item.jk || item.gender || item.JenisKelamin || item['Jenis Kelamin'] || 'L').toUpperCase().startsWith('P') ? 'P' : 'L',
+        class: String(item.kelas || item.class || item.Kelas || ''),
+        dorm: String(item.asrama || item.dorm || item.Asrama || ''),
+        origin_address: String(item.alamat || item.address || item.Alamat || ''),
+        guardian_name: String(item.wali || item.guardian || item['Nama Wali'] || ''),
+        guardian_phone: String(item.hp_wali || item.phone || item['No HP Wali'] || ''),
+        program: String(item.program || item.Program || 'Tahfidz'),
+        status: 'active',
+    }))
+
+    // Basic validation
+    const validData = santriData.filter(s => s.nis && s.name)
+
+    if (validData.length === 0) {
+        return { error: 'Tidak ada data valid untuk diimpor. Pastikan kolom NIS dan Nama terisi.' }
+    }
+
+    const { error } = await supabase
+        .from('santri')
+        .upsert(validData, { onConflict: 'nis' })
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    revalidatePath('/santri')
+    return { success: true, count: validData.length }
+}

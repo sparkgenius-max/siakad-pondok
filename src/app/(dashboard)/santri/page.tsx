@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { SantriDialog } from '@/components/santri/santri-dialog'
+import { SantriImportDialog } from '@/components/santri/santri-import-dialog'
 import { SantriActions } from '@/components/santri/santri-actions'
 import {
     Table,
@@ -58,7 +59,10 @@ export default async function SantriPage({
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Manajemen Santri</h2>
-                <SantriDialog />
+                <div className="flex items-center gap-2">
+                    <SantriImportDialog />
+                    <SantriDialog />
+                </div>
             </div>
 
             {/* Search */}
